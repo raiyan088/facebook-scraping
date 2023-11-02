@@ -254,6 +254,7 @@ async function createAccount() {
                         }
                     } else {
                         console.log('|*|-TIMEOUT:4-')
+                        await errorCapture()
                         await errorHandling()
                     }
                 } else {
@@ -623,27 +624,14 @@ async function getNameList() {
     return output
 }
 
-async function getRecovery() {
-    let output = []
+async function errorCapture() {
     try {
-        output = JSON.parse(fs.readFileSync('temp_recovery.json'))
+        await page.screenshot({
+            path: 'screenshot.jpg'
+        })
+        let content = await page.content()
+        fs.writeFileSync('timeout', content)
     } catch (error) {}
-
-    if (output.length > 0) {
-        return output
-    }
-
-    let response = await getAxios(BASE_URL+'recovery.json')
-    
-    try {
-        output = []
-        for (let value of Object.values(response.data)) {
-            output.push(value)
-        }
-        fs.writeFileSync('temp_recovery.json', JSON.stringify(output))
-    } catch (error) {}
-
-    return output
 }
 
 function getRandomNumber() {
@@ -675,8 +663,6 @@ function getRandomPassword() {
     pass += N[Math.floor((Math.random() * 10))]
     pass += N[Math.floor((Math.random() * 10))]
     pass += N[Math.floor((Math.random() * 10))]
-    //pass += U[Math.floor((Math.random() * 3))]
-    //pass += U[Math.floor((Math.random() * 3))]
     
     return pass
 }
