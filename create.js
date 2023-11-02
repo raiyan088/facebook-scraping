@@ -126,7 +126,7 @@ async function browserStart() {
 }
 
 async function createAccount() {
-    console.log('|*|-START: '+getAccountSize()+'-')
+    console.log('|*|-START: '+getAccountSize(1)+'-')
 
     let user = mName[0].toLowerCase().replace(/[^a-z]/g, '')+getRandomNumber()
     let recovery = mRecovery[Math.floor((Math.random() * mRecovery.length))]
@@ -213,7 +213,7 @@ async function createAccount() {
 
                                             mStart = new Date().getTime()+30000
 
-                                            console.log('|*|--END: '+getAccountSize()+'--')
+                                            console.log('|*|--END: '+getAccountSize(0)+'--')
                                             console.log('|*|---'+getStringTime()+'---')
                                             
                                             try {
@@ -707,8 +707,8 @@ function getStringTime() {
     return [hour, minute].join(':')
 }
 
-function getAccountSize() {
-    let size = ''+(mAddAccount+1)
+function getAccountSize(add) {
+    let size = ''+(mAddAccount+add)
     if (size.length == 1) {
         return '0'+size
     }
