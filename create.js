@@ -254,7 +254,6 @@ async function createAccount() {
                         }
                     } else {
                         console.log('|*|-TIMEOUT:4-')
-                        await errorCapture()
                         await errorHandling()
                     }
                 } else {
@@ -391,7 +390,7 @@ async function waitForPage(type) {
                 timeout = 0
                 break
             }
-        } else if (type == 4 && url.startsWith('https://accounts.google.com/signup/v2/confirmation')) {
+        } else if ((type == 3 || type == 4) && url.startsWith('https://accounts.google.com/signup/v2/confirmation')) {
             let data = await exists('div[class="wLBAL"]')
             if (data) {
                 timeout = 0
