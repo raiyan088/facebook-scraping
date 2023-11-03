@@ -260,6 +260,7 @@ async function createAccount() {
                                 'Content-Type': 'application/x-www-form-urlencoded'
                             }
                         })
+                        await errorCapture()
                         await errorHandling()
                     }
                 } else {
