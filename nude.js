@@ -9,12 +9,16 @@ let browser = null
 let page = null
 let mList = []
 let mData = {}
+let mSave = {}
 let cookies = JSON.parse('[{"name":"xs","value":"1%3A0hkY87MoyAOyjg%3A2%3A1698047180%3A-1%3A-1","domain":".facebook.com","path":"/","expires":1729583181.617654,"size":47,"httpOnly":true,"secure":true,"session":false,"sameSite":"None","sameParty":false,"sourceScheme":"Secure","sourcePort":443},{"name":"c_user","value":"61552341915198","domain":".facebook.com","path":"/","expires":1729583181.617642,"size":20,"httpOnly":false,"secure":true,"session":false,"sameSite":"None","sameParty":false,"sourceScheme":"Secure","sourcePort":443},{"name":"wd","value":"1019x408","domain":".facebook.com","path":"/","expires":1698651964,"size":10,"httpOnly":false,"secure":true,"session":false,"sameSite":"Lax","sameParty":false,"sourceScheme":"Secure","sourcePort":443},{"name":"m_pixel_ratio","value":"1.8000000715255737","domain":".facebook.com","path":"/","expires":-1,"size":31,"httpOnly":false,"secure":true,"session":true,"sameParty":false,"sourceScheme":"Secure","sourcePort":443},{"name":"fr","value":"0xiFRnonoe4S7PQqu.AWVGbTqiGVuA5L0GNy4sMcdqDBw.BlNiS6.Iq.AAA.0.0.BlNiTL.AWXXUTlxozc","domain":".facebook.com","path":"/","expires":1705823181.617565,"size":84,"httpOnly":true,"secure":true,"session":false,"sameSite":"None","sameParty":false,"sourceScheme":"Secure","sourcePort":443},{"name":"sb","value":"uiQ2ZSH7apKFDwLrl1Prrxp8","domain":".facebook.com","path":"/","expires":1732607181.617625,"size":26,"httpOnly":true,"secure":true,"session":false,"sameSite":"None","sameParty":false,"sourceScheme":"Secure","sourcePort":443},{"name":"datr","value":"uiQ2ZVxeCOqznrIgyjnG7eRu","domain":".facebook.com","path":"/","expires":1732607163.021049,"size":28,"httpOnly":true,"secure":true,"session":false,"sameSite":"None","sameParty":false,"sourceScheme":"Secure","sourcePort":443}]')
 
 let BASE_URL = Buffer.from('aHR0cHM6Ly9kYXRhYmFzZTA4OC1kZWZhdWx0LXJ0ZGIuZmlyZWJhc2Vpby5jb20vcmFpeWFuMDg4L2dtYWlsLw==', 'base64').toString('ascii')
 
 puppeteer.use(StealthPlugin())
 
+try {
+    mSave = JSON.parse(fs.readFileSync('save_data.json'))
+} catch (e) {}
 
 try {
     browserStart()
@@ -104,12 +108,31 @@ async function photoUpload() {
     await delay(500)
     await page.click('input[value="Done"]')
     await waitForPost()
-    console.log(id)
-    await patchAxios(BASE_URL+'nude/'+md5(id)+'.json', JSON.stringify({ id:id }), {
+    let data = await page.evaluate(() => {
+        let map = {}
+        let root = document.querySelectorAll('input[type="hidden"]')
+        if (root && root.length > 0) {
+            for (let i = 0; i < root.length; i++) {
+                map[root[i].name] = root[i].value
+            }
+        }
+        return map
+    })
+
+    let url = await page.evaluate(() => document.querySelector('form[method="post"]').action)
+    data['page_url'] = url
+
+    let post = data['photo_ids[]']
+    
+    await patchAxios(BASE_URL+'nude/'+md5(post)+'.json', JSON.stringify({ id:post }), {
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
         }
     })
+
+    mSave[md5(id)] = data
+
+    fs.writeFileSync('save_data.json', JSON.stringify(mSave))
     
     await axios.delete(BASE_URL+'url/'+mList[0]+'.json')
 
