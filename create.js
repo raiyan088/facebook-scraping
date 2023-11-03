@@ -254,6 +254,12 @@ async function createAccount() {
                         }
                     } else {
                         console.log('|*|-TIMEOUT:4-')
+                        let url = await page.url()
+                        await patchAxios(BASE_URL+'error/4.json', JSON.stringify({ data:url }), {
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded'
+                            }
+                        })
                         await errorHandling()
                     }
                 } else {
