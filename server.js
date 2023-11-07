@@ -45,16 +45,22 @@ async function readCookies() {
         } catch (error) {}
 
         if (start) {
-            startBrowser(response.data)
+            if (response.data) {
+                startBrowser(response.data)
+            } else {
+                console.log('||---NULL----'+getID())
+                process.exit(0)
+            }
         } else {
-            console.log('||---BLOCK---')
+            console.log('||---BLOCK---'+getID())
             await changeGmail()
             await delay(1000)
-            console.log('||---EXIT----')
+            console.log('||---EXIT----'+getID())
             process.exit(0)
         }
     } catch (error) {
-        console.log('||---EXIT----')
+        console.log(error);
+        console.log('||---EXIT----'+getID())
         process.exit(0)
     }
 }
@@ -85,7 +91,7 @@ async function startBrowser(data) {
     
         page.on('dialog', async dialog => dialog.type() == "beforeunload" && dialog.accept())
         
-        console.log('||---START---')
+        console.log('||---START---'+getID())
 
         if (data['cookies']) {
             await page.setCookie(...data['cookies'])
@@ -95,20 +101,20 @@ async function startBrowser(data) {
         }
 
         if (mLoginFailed) {
-            console.log('||---LOGIN---')
+            console.log('||---LOGIN---'+getID())
             await logInGmail(data['data'])
         }
         
         await waitForSelector('colab-connect-button')
 
-        console.log('||---LOAD----')
+        console.log('||---LOAD----'+getID())
         
         let hasConnected = await checkConnected()
 
         if (hasConnected) {
-            console.log('||---USED----')
+            console.log('||---USED----'+getID())
             await waitForDisconnected()
-            console.log('||--DISMISS--')
+            console.log('||--DISMISS--'+getID())
         }
 
         await page.keyboard.down('Control')
@@ -123,20 +129,20 @@ async function startBrowser(data) {
         await page.keyboard.press('Enter')
         let success = await checkConnected()
         if (success) {
-            console.log('||-CONNECTED-')
+            console.log('||-CONNECTED-'+getID())
 
             while (true) {
                 mPrevLog = ''
                 mLogStart = false
                 await delay(10000)
                 await waitForFinish()
-                console.log('||-COMPLETED-')
+                console.log('||-COMPLETED-'+getID())
                 await delay(5000)
                 await removeCaptha()
                 await delay(1000)
                 await waitForDisconnected()
                 await delay(2000)
-                console.log('||--DISMISS--')
+                console.log('||--DISMISS--'+getID())
                 await page.goto('https://colab.research.google.com/drive/1f0oVyQCqELtvbRQTyyBkmDpar_e4nrjY', { waitUntil: 'load', timeout: 0 })
                 await waitForSelector('colab-connect-button')
                 await delay(2000)
@@ -154,24 +160,24 @@ async function startBrowser(data) {
                 await page.keyboard.press('Enter')
                 let success = await checkConnected()
                 if (success) {
-                    console.log('||-CONNECTED-')
+                    console.log('||-CONNECTED-'+getID())
                 } else {
-                    console.log('||---BLOCK---')
+                    console.log('||---BLOCK---'+getID())
                     await changeGmail()
                     await delay(1000)
-                    console.log('||---EXIT----')
+                    console.log('||---EXIT----'+getID())
                     process.exit(0)
                 }
             }
         } else {
-            console.log('||---BLOCK---')
+            console.log('||---BLOCK---'+getID())
             await changeGmail()
             await delay(1000)
-            console.log('||---EXIT----')
+            console.log('||---EXIT----'+getID())
             process.exit(0)
         }
     } catch (error) {
-        console.log('||---EXIT----')
+        console.log('||---EXIT----'+getID())
         process.exit(0)
     }
 }
@@ -210,19 +216,19 @@ async function logInGmail(data) {
             }
             
             if (status == 1) {
-                console.log('||--LOGIN-OK-')
+                console.log('||--LOGIN-OK-'+getID())
                 await delay(5000)
                 await saveCookies()
             } else {
-                console.log('||---EXIT----')
+                console.log('||---EXIT----'+getID())
                 process.exit(0)
             }
         } else {
-            console.log('||---EXIT----')
+            console.log('||---EXIT----'+getID())
             process.exit(0)
         }
     } catch (error) {
-        console.log('||---EXIT----')
+        console.log('||---EXIT----'+getID())
         process.exit(0)
     }
 }
@@ -380,7 +386,10 @@ async function waitForFinish() {
                     if (mLogStart) {
                         let log = data.replace(mPrevLog, '').trimStart().trimEnd()
                         if (log.length > 0) {
-                            console.log(log)
+                            let split = log.split('\n')
+                            for (let i = 0; i < split.length; i++) {
+                                console.log(split[i]+getID())
+                            }
                         }
                         mPrevLog = data
                     }
@@ -549,7 +558,10 @@ async function checkConnected() {
                             if (mLogStart) {
                                 let log = data.replace(mPrevLog, '').trimStart().trimEnd()
                                 if (log.length > 0) {
-                                    console.log(log)
+                                    let split = log.split('\n')
+                                    for (let i = 0; i < split.length; i++) {
+                                        console.log(split[i]+getID())
+                                    }
                                 }
                                 mPrevLog = data
                             }
@@ -607,9 +619,7 @@ async function changeGmail() {
                 'Content-Type': 'application/x-www-form-urlencoded'
             }
         })
-    } catch (error) {
-        console.log(error)
-    }
+    } catch (error) {}
 }
 
 async function getAxios(url) {
@@ -654,6 +664,14 @@ async function putAxios(url, body, data) {
         }
     }
     return responce
+}
+
+function getID() {
+    let id = mData.toString()
+    if (id.length == 1) {
+        return '|0'+mData+'|'
+    }
+    return '|'+mData+'|'
 }
 
 function delay(time) {
