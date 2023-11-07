@@ -32,6 +32,8 @@ process.argv.slice(2).forEach(function (data, index) {
         
         SIZE = (size-1)*5
 
+        console.log('★★★--START--★★★')
+
         connect01()
     } catch (error) {
         console.log('Index Error:', error)
