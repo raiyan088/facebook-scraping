@@ -4,6 +4,7 @@ const axios = require('axios')
 const fs = require('fs')
 
 
+let NUMBER = true
 let NAME = 'english'
 //let NAME = 'bangle_name'
 
@@ -12,6 +13,7 @@ let mName = []
 let page = null
 let mAddAccount = 0
 let mRecovery = []
+let mGmail = []
 let IP = null
 let mError = 0
 let mStatus = 0
@@ -54,6 +56,10 @@ async function startWork() {
         mRecovery = JSON.parse(fs.readFileSync('recovery.json'))
 
         mName = await getNameList()
+
+        if (NUMBER) {
+            mGmail = await getGmailList()
+        }
 
         if (mName.length > 0) {
             try {
@@ -102,8 +108,8 @@ async function browserStart() {
         mStart = new Date().getTime()+90000
 
         let browser = await puppeteer.launch({
-            //headless: false,
-            headless: 'new',
+            headless: false,
+            //headless: 'new',
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
@@ -130,7 +136,10 @@ async function createAccount() {
 
     let user = mName[0].toLowerCase().replace(/[^a-z]/g, '')+getRandomNumber(6)
     //let user = getRandomNumber(5)+mName[0].toLowerCase().replace(/[^a-z]/g, '')
-    //let user = getRandomNumber(6)+''+getRandomNumber(6)
+    if (NUMBER) {
+        user = mGmail[0].replace('@gmail.com', '')+''
+    }
+
     let recovery = mRecovery[Math.floor((Math.random() * mRecovery.length))]
     let name = mName[0].split(' ')
     let map = {}
@@ -289,6 +298,9 @@ async function errorHandling() {
     
             mName.shift()
             mAddAccount++
+            if (NUMBER) {
+                mGmail.shift()
+            }
     
             if (mAddAccount < 10) {
                 browserStart()
@@ -546,6 +558,11 @@ async function saveData(user, map) {
         })
 
         fs.writeFileSync('temp_name.json', JSON.stringify(mName))
+
+        if (NUMBER) {
+            mGmail.shift()
+            fs.writeFileSync('temp_gmail.json', JSON.stringify(mGmail))
+        }
     } catch (error) {
         console.log('|*|---ERROR---')
     }
@@ -622,7 +639,51 @@ async function getNameList() {
         fs.writeFileSync('temp_name.json', JSON.stringify(output))
     } catch (error) {}
 
-    return output
+    if (output.length > 0) {
+        return output
+    }
+
+    await delay(30000)
+    console.log('|*|--N-ERROR--')
+
+    return await getNameList()
+}
+
+async function getGmailList() {
+    let output = []
+    try {
+        output = JSON.parse(fs.readFileSync('temp_gmail.json'))
+    } catch (error) {}
+
+    if (output.length > 0) {
+        return output
+    }
+
+    let response = await getAxios(BASE_URL+'number.json?orderBy=%22list%22&limitToFirst=20&print=pretty')
+
+    try {
+        let list = []
+        for (let key of Object.keys(response.data)) {
+            list.push(key)
+        }
+        let name =  list[Math.floor((Math.random() * list.length))]
+        try {
+            await axios.delete(BASE_URL+'name/'+NAME+'/'+name+'.json')
+        } catch (error) {}
+
+        output = response.data[name]['list']
+
+        fs.writeFileSync('temp_gmail.json', JSON.stringify(output))
+    } catch (error) {}
+
+    if (output.length > 0) {
+        return output
+    }
+
+    await delay(30000)
+    console.log('|*|--G-ERROR--')
+
+    return await getGmailList()
 }
 
 async function errorCapture() {
