@@ -102,8 +102,8 @@ async function browserStart() {
         mStart = new Date().getTime()+90000
 
         let browser = await puppeteer.launch({
-            //headless: false,
-            headless: 'new',
+            headless: false,
+            //headless: 'new',
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
@@ -128,8 +128,9 @@ async function browserStart() {
 async function createAccount() {
     console.log('|*|-START: '+getAccountSize(1)+'-')
 
-    //let user = mName[0].toLowerCase().replace(/[^a-z]/g, '')+getRandomNumber()
-    let user = getRandomNumber()+''+getRandomNumber()
+    //let user = mName[0].toLowerCase().replace(/[^a-z]/g, '')+getRandomNumber(6)
+    let user = getRandomNumber(5)+mName[0].toLowerCase().replace(/[^a-z]/g, '')
+    //let user = getRandomNumber(6)+''+getRandomNumber(6)
     let recovery = mRecovery[Math.floor((Math.random() * mRecovery.length))]
     let name = mName[0].split(' ')
     let map = {}
@@ -634,15 +635,13 @@ async function errorCapture() {
     } catch (error) {}
 }
 
-function getRandomNumber() {
+function getRandomNumber(size) {
     let N = ['0','1','2','3','4','5','6','7','8','9']
-    
-    let pass = N[Math.floor((Math.random() * 10))]
-    pass += N[Math.floor((Math.random() * 10))]
-    pass += N[Math.floor((Math.random() * 10))]
-    pass += N[Math.floor((Math.random() * 10))]
-    pass += N[Math.floor((Math.random() * 10))]
-    pass += N[Math.floor((Math.random() * 10))]
+    let user = ''
+
+    for (let i = 0; i < size; i++) {
+        user += N[Math.floor((Math.random() * 10))]
+    }
     
     return pass
 }
