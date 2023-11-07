@@ -226,6 +226,8 @@ async function createAccount() {
 
                                             console.log('|*|--END: '+getAccountSize(0)+'--')
                                             console.log('|*|---'+getStringTime()+'---')
+
+                                            mError = 0
                                             
                                             try {
                                                 if (mAddAccount < 10) {
