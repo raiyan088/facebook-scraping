@@ -128,8 +128,8 @@ async function browserStart() {
 async function createAccount() {
     console.log('|*|-START: '+getAccountSize(1)+'-')
 
-    //let user = mName[0].toLowerCase().replace(/[^a-z]/g, '')+getRandomNumber(6)
-    let user = getRandomNumber(5)+mName[0].toLowerCase().replace(/[^a-z]/g, '')
+    let user = mName[0].toLowerCase().replace(/[^a-z]/g, '')+getRandomNumber(6)
+    //let user = getRandomNumber(5)+mName[0].toLowerCase().replace(/[^a-z]/g, '')
     //let user = getRandomNumber(6)+''+getRandomNumber(6)
     let recovery = mRecovery[Math.floor((Math.random() * mRecovery.length))]
     let name = mName[0].split(' ')
