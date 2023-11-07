@@ -108,8 +108,8 @@ async function browserStart() {
         mStart = new Date().getTime()+90000
 
         let browser = await puppeteer.launch({
-            headless: false,
-            //headless: 'new',
+            //headless: false,
+            headless: 'new',
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
