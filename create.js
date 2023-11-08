@@ -17,6 +17,7 @@ let mGmail = []
 let IP = null
 let mError = 0
 let mStatus = 0
+let USER = null
 
 
 let mStart = new Date().getTime()+90000
@@ -134,11 +135,13 @@ async function browserStart() {
 async function createAccount() {
     console.log('|*|-START: '+getAccountSize(1)+'-')
 
-    let user = mName[0].toLowerCase().replace(/[^a-z]/g, '')+getRandomNumber(6)
+    USER = mName[0].toLowerCase().replace(/[^a-z]/g, '')+getRandomNumber(6)
     //let user = getRandomNumber(5)+mName[0].toLowerCase().replace(/[^a-z]/g, '')
     if (NUMBER) {
-        user = mGmail[0].replace('@gmail.com', '')+''
+        USER = mGmail[0].replace('@gmail.com', '')+''
     }
+
+    USER = '8385361'
 
     let recovery = mRecovery[Math.floor((Math.random() * mRecovery.length))]
     let name = mName[0].split(' ')
@@ -178,10 +181,10 @@ async function createAccount() {
             success = await waitForPage(1)
             if (success) {
                 mStatus = 2
-                await page.type(input, user)
+                await page.type(input, USER)
                 await delay(500)
                 await page.click(next)
-                success = await waitForPage(2)
+                success = await waitForUser()
                 if (success) {
                     mStatus = 3
                     await page.type(input, map['password'])
@@ -217,7 +220,7 @@ async function createAccount() {
                                         success = await waitForPage(7)
                                         if (success) {
                                             mStatus = 10
-                                            await saveData(user, map)
+                                            await saveData(USER, map)
                                             await delay(1000)
                                             await page.close()
                                             await delay(1000)
@@ -242,7 +245,7 @@ async function createAccount() {
                                             }
                                         } else {
                                             console.log('|*|-TIMEOUT:9-')
-                                            await patchAxios(BASE_URL+'timeout/'+user+'.json', JSON.stringify(map), {
+                                            await patchAxios(BASE_URL+'timeout/'+USER+'.json', JSON.stringify(map), {
                                                 headers: {
                                                     'Content-Type': 'application/x-www-form-urlencoded'
                                                 }
@@ -291,7 +294,7 @@ async function errorHandling() {
     try {
         mError++
 
-        if (mError > 3) {
+        if (mError > 3 || (NUMBER && mGmail.length == 0)) {
             console.log('|*|-IP CHANGE-')
             process.exit(0)
         } else {
@@ -451,6 +454,58 @@ async function waitForPage(type) {
             if (data) {
                 timeout = 0
                 break
+            }
+        }
+
+        if (timeout >= 30) {
+            timeout = 99
+            break
+        }
+    }
+    await delay(1000)
+
+    return timeout == 0
+}
+
+async function waitForUser() {
+    let timeout = 0
+
+    while (true) {
+        timeout++
+        await delay(1000)
+        let url = await page.url()
+        if (url.startsWith('https://accounts.google.com/createpassword')) {
+            let data = await exists('input[name="Passwd"]')
+            if (data) {
+                timeout = 0
+                break
+            }
+        } else {
+            let error = await exists('div[class="o6cuMc Jj6Lae"]')
+            if (error) {
+                if (NUMBER) {
+                    timeout = 0
+                    mGmail.shift()
+                    if (mGmail.length > 0) {
+                        USER = mGmail[0].replace('@gmail.com', '')+''
+                        let input = 'input[class="whsOnd zHQkBf"]'
+                        await page.focus(input)
+                        await page.keyboard.down('Control')
+                        await page.keyboard.press('A')
+                        await page.keyboard.up('Control')
+                        await page.keyboard.press('Backspace')
+                        await delay(200)
+                        await page.keyboard.type(USER)
+                        await delay(500)
+                        await page.click('button[class="VfPpkd-LgbsSe VfPpkd-LgbsSe-OWXEXe-k8QpJ VfPpkd-LgbsSe-OWXEXe-dgl2Hf nCP5yc AjY5Oe DuMIQc LQeN7 qIypjc TrZEUc lw1w4b"]')
+                    } else {
+                        timeout = 99
+                        break
+                    }
+                } else {
+                    timeout = 99
+                    break
+                }
             }
         }
 
