@@ -21,6 +21,7 @@ let TL = null
 let azt = null
 let deviceinfo = null
 let USER = null
+let SERVER = 'regular'
 
 
 let mUserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36'
@@ -142,8 +143,8 @@ async function browserStart() {
 async function createAccount() {
     console.log('|*|-START: '+getAccountSize(1)+'-')
 
-    USER = mName[0].toLowerCase().replace(/[^a-z]/g, '')+getRandomNumber(6)
-    //let user = getRandomNumber(5)+mName[0].toLowerCase().replace(/[^a-z]/g, '')
+    USER = mName[0].toLowerCase().replace(/[^a-z]/g, '')+getRandomNumber(3,7)
+    //let user = getRandomNumber(5,5)+mName[0].toLowerCase().replace(/[^a-z]/g, '')
     if (NUMBER) {
         USER = mGmail[0].replace('@gmail.com', '')+''
     }
@@ -156,7 +157,6 @@ async function createAccount() {
     map['create'] = parseInt(new Date().getTime()/1000)
 
     await page.goto('https://accounts.google.com/signup/v2/createaccount?continue=https%3A%2F%2Fmyaccount.google.com%2Fphone&theme=glif&flowName=GlifWebSignIn&flowEntry=SignUp&hl=en', { waitUntil: 'load', timeout: 0 })
-    console.log('Load Success')
     await delay(1000)
     await page.type('#firstName', name[0])
     await delay(500)
@@ -164,7 +164,6 @@ async function createAccount() {
     await delay(500)
     await page.click('#collectNameNext')
     let success = await waitForPage(0)
-    console.log(success)
     if (success) {
         mStatus = 1
         let TL = await getTL()
@@ -203,14 +202,11 @@ async function createAccount() {
                     if (success) {
                         mStatus = 4
                         await delay(1000)
-                        console.log(4)
                         success = await addRecovery(map['recovery'])
-                        console.log(success)
                         if (success) {
                             await delay(1000)
                             await skipNumber()
                             success = await waitForPage(4)
-                            console.log(5, success)
                             if (success) {
                                 mStatus = 5
                                 await page.click(next)
@@ -421,6 +417,8 @@ async function waitForUser() {
         } else {
             let error = await exists('div[class="o6cuMc Jj6Lae"]')
             if (error) {
+                let next = 'button[class="VfPpkd-LgbsSe VfPpkd-LgbsSe-OWXEXe-k8QpJ VfPpkd-LgbsSe-OWXEXe-dgl2Hf nCP5yc AjY5Oe DuMIQc LQeN7 qIypjc TrZEUc lw1w4b"]'
+                let input = 'input[class="whsOnd zHQkBf"]'
                 if (NUMBER) {
                     timeout = 0
                     mGmail.shift()
@@ -436,14 +434,24 @@ async function waitForUser() {
                         await delay(200)
                         await page.keyboard.type(USER)
                         await delay(500)
-                        await page.click('button[class="VfPpkd-LgbsSe VfPpkd-LgbsSe-OWXEXe-k8QpJ VfPpkd-LgbsSe-OWXEXe-dgl2Hf nCP5yc AjY5Oe DuMIQc LQeN7 qIypjc TrZEUc lw1w4b"]')
+                        await page.click(next)
                     } else {
                         timeout = 99
                         break
                     }
                 } else {
-                    timeout = 99
-                    break
+                    USER = mName[0].toLowerCase().replace(/[^a-z]/g, '')+getRandomNumber(3,7)
+    
+                    mStart = new Date().getTime()+80000
+                    await page.focus(input)
+                    await page.keyboard.down('Control')
+                    await page.keyboard.press('A')
+                    await page.keyboard.up('Control')
+                    await page.keyboard.press('Backspace')
+                    await delay(200)
+                    await page.keyboard.type(USER)
+                    await delay(500)
+                    await page.click(next)
                 }
             }
         }
@@ -570,7 +578,7 @@ async function saveData(user, map) {
             add: mAddAccount
         }
 
-        await patchAxios(BASE_URL+'new/'+user+'.json', JSON.stringify(map), {
+        await patchAxios(BASE_URL+SERVER+'/'+user+'.json', JSON.stringify(map), {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
             }
@@ -726,13 +734,9 @@ function setRequestData(data) {
                         deviceinfo = temp[1]
                     }
                 }
-            } catch (error) {
-                console.log(error)
-            }
+            } catch (error) {}
         }
-    } catch (error) {
-        console.log(error)
-    }
+    } catch (error) {}
 }
 
 async function errorCapture() {
@@ -755,11 +759,13 @@ function getRecoveryData(recovery) {
     return 'continue=https%3A%2F%2Fwww.google.com%3Fhl%3Den-US&ec=GAlA8wE&flowEntry=AddSession&hl=en&theme=glif&f.req=%5B%22TL%3A'+TL+'%22%2C%22'+encodeURIComponent(recovery)+'%22%5D&cookiesDisabled=false&deviceinfo='+deviceinfo+'&gmscoreversion=undefined&flowName=GlifWebSignIn&checkConnection=youtube%3A94%3A0&checkedDomains=youtube&pstMsg=1&'
 }
 
-function getRandomNumber(size) {
+function getRandomNumber(start, end) {
     let N = ['0','1','2','3','4','5','6','7','8','9']
     let user = ''
 
-    for (let i = 0; i < size; i++) {
+    let random = Math.floor((Math.random() * (end-start)))+start
+
+    for (let i = 0; i < random; i++) {
         user += N[Math.floor((Math.random() * 10))]
     }
     
@@ -767,22 +773,15 @@ function getRandomNumber(size) {
 }
 
 function getRandomPassword() {
-    let C = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z']
-    let S = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
-    let N = ['0','1','2','3','4','5','6','7','8','9']
-    let U = ['#','$','@']
+    let C = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','0','1','2','3','4','5','6','7','8','9']
     
-    let pass = C[Math.floor((Math.random() * 26))]
-    pass += S[Math.floor((Math.random() * 26))]
-    pass += S[Math.floor((Math.random() * 26))]
-    pass += S[Math.floor((Math.random() * 26))]
-    pass += S[Math.floor((Math.random() * 26))]
-    pass += S[Math.floor((Math.random() * 26))]
-    pass += N[Math.floor((Math.random() * 10))]
-    pass += N[Math.floor((Math.random() * 10))]
-    pass += N[Math.floor((Math.random() * 10))]
-    pass += N[Math.floor((Math.random() * 10))]
-    
+    let random = Math.floor((Math.random() * 4))+8
+    let pass = ''
+
+    for (let i = 0; i < random; i++) {
+        pass += C[Math.floor((Math.random() * C.length))]
+    }
+
     return pass
 }
 
