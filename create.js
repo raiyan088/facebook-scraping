@@ -504,6 +504,7 @@ async function waitForUser() {
                     timeout = 0
                     mGmail.shift()
                     if (mGmail.length > 0) {
+                        mStart = new Date().getTime()+80000
                         USER = mGmail[0].replace('@gmail.com', '')+''
                         let input = 'input[class="whsOnd zHQkBf"]'
                         await page.focus(input)
