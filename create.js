@@ -236,6 +236,23 @@ async function createAccount() {
                                                 if (mAddAccount < 10) {
                                                     browserStart()
                                                 } else {
+                                                    try {
+                                                        if (NUMBER) {
+                                                            if (mGmail.length > 0) {
+                                                                let map = {}
+                                                                for (let x = 0; x < mGmail.length; x++) {
+                                                                    map[mGmail[x]] = {
+                                                                        list : 0
+                                                                    }
+                                                                }
+                                                                await patchAxios(BASE_URL+'no_use.json', JSON.stringify(map), {
+                                                                    headers: {
+                                                                        'Content-Type': 'application/x-www-form-urlencoded'
+                                                                    }
+                                                                })
+                                                            }
+                                                        }
+                                                    } catch (error) {}
                                                     console.log('|*|-IP CHANGE-')
                                                     process.exit(0)
                                                 }
