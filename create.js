@@ -4,7 +4,7 @@ const axios = require('axios')
 const fs = require('fs')
 
 
-let NUMBER = true
+let NUMBER = false
 let NAME = 'english'
 //let NAME = 'bangle_name'
 
@@ -17,8 +17,13 @@ let mGmail = []
 let IP = null
 let mError = 0
 let mStatus = 0
+let TL = null
+let azt = null
+let deviceinfo = null
 let USER = null
 
+
+let mUserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36'
 
 let mStart = new Date().getTime()+90000
 
@@ -122,6 +127,8 @@ async function browserStart() {
     
         page = (await browser.pages())[0]
 
+        await page.setUserAgent(mUserAgent)
+
         page.on('dialog', async dialog => dialog.type() == "beforeunload" && dialog.accept())
 
         await createAccount()
@@ -148,7 +155,8 @@ async function createAccount() {
     map['recovery'] = recovery+'@outlook.com'
     map['create'] = parseInt(new Date().getTime()/1000)
 
-    await page.goto('https://accounts.google.com/signup/v2/createaccount?continue=https%3A%2F%2Fmyaccount.google.com%2Frecovery%2Femail&theme=glif&flowName=GlifWebSignIn&flowEntry=SignUp&hl=en', { waitUntil: 'load', timeout: 0 })
+    await page.goto('https://accounts.google.com/signup/v2/createaccount?continue=https%3A%2F%2Fmyaccount.google.com%2Fphone&theme=glif&flowName=GlifWebSignIn&flowEntry=SignUp&hl=en', { waitUntil: 'load', timeout: 0 })
+    console.log('Load Success')
     await delay(1000)
     await page.type('#firstName', name[0])
     await delay(500)
@@ -156,6 +164,7 @@ async function createAccount() {
     await delay(500)
     await page.click('#collectNameNext')
     let success = await waitForPage(0)
+    console.log(success)
     if (success) {
         mStatus = 1
         let TL = await getTL()
@@ -163,7 +172,7 @@ async function createAccount() {
             let year = getRandomYear()
             let month = getRandomMonth()
             let day = getRandomDay()
-            await page.goto('https://accounts.google.com/signup/v2/birthdaygender?continue=https%3A%2F%2Fmyaccount.google.com%2Frecovery%2Femail&source=com.google.android.gms&xoauth_display_name=Android%20Phone&canFrp=1&canSk=1&mwdm=MWDM_QR_CODE&lang=en&langCountry=en_us&hl=en-US&cc=us&multilogin=1&use_native_navigation=0&cbsc=1&flowName=EmbeddedSetupAndroid&TL='+TL, { waitUntil: 'load', timeout: 0 })
+            await page.goto('https://accounts.google.com/signup/v2/birthdaygender?continue=https%3A%2F%2Fmyaccount.google.com%2Fphone&source=com.google.android.gms&xoauth_display_name=Android%20Phone&canFrp=1&canSk=1&mwdm=MWDM_QR_CODE&lang=en&langCountry=en_us&hl=en-US&cc=us&multilogin=1&use_native_navigation=0&cbsc=1&flowName=EmbeddedSetupAndroid&TL='+TL, { waitUntil: 'load', timeout: 0 })
             let next = 'button[class="VfPpkd-LgbsSe VfPpkd-LgbsSe-OWXEXe-k8QpJ VfPpkd-LgbsSe-OWXEXe-dgl2Hf nCP5yc AjY5Oe DuMIQc LQeN7 qIypjc TrZEUc lw1w4b"]'
             let input = 'input[class="whsOnd zHQkBf"]'
             await delay(1000)
@@ -188,119 +197,91 @@ async function createAccount() {
                     await page.type(input, map['password'])
                     await delay(500)
                     await page.click(next)
+                    const finalRequest = await page.waitForResponse(response => response.url().startsWith('https://accounts.google.com/_/signup/validatepassword'))
+                    setRequestData(finalRequest.request().postData())
                     success = await waitForPage(3)
                     if (success) {
                         mStatus = 4
                         await delay(1000)
-                        await skipNumber()
-                        success = await waitForPage(4)
+                        console.log(4)
+                        success = await addRecovery(map['recovery'])
+                        console.log(success)
                         if (success) {
-                            mStatus = 5
-                            await page.click(next)
-                            await page.waitForNavigation({ waitUntil: ['load'] })
-                            success = await waitForPage(5)
+                            await delay(1000)
+                            await skipNumber()
+                            success = await waitForPage(4)
+                            console.log(5, success)
                             if (success) {
-                                mStatus = 6
+                                mStatus = 5
                                 await page.click(next)
-                                await delay(1000)
-                                await dialogConfirm()
-                                success = await waitForPage(6)
+                                await page.waitForNavigation({ waitUntil: ['load'] })
+                                success = await waitForPage(5)
                                 if (success) {
-                                    mStatus = 7
-                                    await page.goto('https://myaccount.google.com/recovery/email', { waitUntil: 'load', timeout: 0 })
+                                    mStatus = 6
+                                    await page.click(next)
                                     await delay(1000)
-                                    success = await waitForRecoveryType(map['recovery'], false)
+                                    await dialogConfirm()
+                                    success = await waitForPage(6)
                                     if (success) {
-                                        mStatus = 9
-                                        await delay(500)
-                                        await addRecovery()
-                                        await delay(500)
-                                        success = await waitForPage(7)
-                                        if (success) {
-                                            mStatus = 10
-                                            await saveData(USER, map)
-                                            await delay(1000)
-                                            await page.close()
-                                            await delay(1000)
+                                        mStatus = 7
+                                        await page.goto('https://myaccount.google.com/phone', { waitUntil: 'load', timeout: 0 })
+                                        await saveData(USER, map)
+                                        await delay(1000)
+                                        await page.close()
+                                        await delay(1000)
 
-                                            mStart = new Date().getTime()+30000
+                                        mStart = new Date().getTime()+30000
 
-                                            console.log('|*|--END: '+getAccountSize(0)+'--')
-                                            console.log('|*|---'+getStringTime()+'---')
+                                        console.log('|*|--END: '+getAccountSize(0)+'--')
+                                        console.log('|*|---'+getStringTime()+'---')
 
-                                            mError = 0
-                                            
-                                            try {
-                                                if (mAddAccount < 10) {
-                                                    browserStart()
-                                                } else {
-                                                    // try {
-                                                    //     if (NUMBER) {
-                                                    //         if (mGmail.length > 0) {
-                                                    //             let map = {}
-                                                    //             for (let x = 0; x < mGmail.length; x++) {
-                                                    //                 map[mGmail[x]] = {
-                                                    //                     list : 0
-                                                    //                 }
-                                                    //             }
-                                                    //             await patchAxios(BASE_URL+'no_use.json', JSON.stringify(map), {
-                                                    //                 headers: {
-                                                    //                     'Content-Type': 'application/x-www-form-urlencoded'
-                                                    //                 }
-                                                    //             })
-                                                    //         }
-                                                    //     }
-                                                    // } catch (error) {}
-                                                    console.log('|*|-IP CHANGE-')
-                                                    process.exit(0)
-                                                }
-                                            } catch (error) {
-                                                console.log('|*|---ERROR---')
+                                        mError = 0
+                                        
+                                        try {
+                                            if (mAddAccount < 10) {
+                                                browserStart()
+                                            } else {
+                                                console.log('|*|-IP CHANGE-')
                                                 process.exit(0)
                                             }
-                                        } else {
-                                            console.log('|*|-TIMEOUT:9-')
-                                            await patchAxios(BASE_URL+'timeout/'+USER+'.json', JSON.stringify(map), {
-                                                headers: {
-                                                    'Content-Type': 'application/x-www-form-urlencoded'
-                                                }
-                                            })
-                                            await errorHandling()
+                                        } catch (error) {
+                                            console.log('|*|---ERROR---')
+                                            process.exit(0)
                                         }
                                     } else {
-                                        console.log('|*|-TIMEOUT:8-')
+                                        console.log('|*|-TIMEOUT:9-')
                                         await errorHandling()
                                     }
                                 } else {
-                                    console.log('|*|-TIMEOUT:7-')
+                                    console.log('|*|-TIMEOUT:8-')
                                     await errorHandling()
                                 }
                             } else {
-                                console.log('|*|-TIMEOUT:6-')
+                                console.log('|*|-TIMEOUT:7-')
                                 await errorHandling()
                             }
                         } else {
-                            console.log('|*|-TIMEOUT:5-')
+                            console.log('|*|-TIMEOUT:6-')
                             await errorHandling()
                         }
                     } else {
-                        console.log('|*|-TIMEOUT:4-')
+                        console.log('|*|-TIMEOUT:5-')
                         await errorHandling()
                     }
                 } else {
-                    console.log('|*|-TIMEOUT:3-')
+                    console.log('|*|-TIMEOUT:4-')
                     await errorHandling()
                 }
             } else {
-                console.log('|*|-TIMEOUT:2-')
+                console.log('|*|-TIMEOUT:3-')
                 await errorHandling()
             }
         } else {
-            console.log('|*|-TIMEOUT:1-')
+            console.log('|*|-TIMEOUT:2-')
             await errorHandling()
         }
     } else {
-        console.log('|*|-TIMEOUT:0-')
+        console.log('|*|-TIMEOUT:1-')
         await errorHandling()
     }
 }
@@ -332,64 +313,6 @@ async function errorHandling() {
     } catch (error) {
         console.log('|*|---ERROR---')
         process.exit(0)
-    }
-}
-
-
-async function waitForRecoveryType(recovery, again) {
-    let timeout = 0
-    while (true) {
-        timeout++
-        
-        let exists = await page.evaluate(() => {
-            let root = document.querySelector('input[type="email"]')
-            if (root) {
-                return true
-            }
-            return false
-        })
-
-        if (exists) {
-            await page.type('input[type="email"]', recovery)
-            await delay(500)
-            let success = await page.evaluate((recovery) => {
-                try {
-                    let data = document.querySelector('input[type="email"]').value
-                    if (data == recovery) {
-                        return true
-                    }
-                } catch (error) {}
-
-                return false
-            }, recovery)
-
-            if (success) {
-                timeout = 0
-                break
-            } else {
-                await delay(1000)
-            }
-        } else {
-            await delay(1000)
-        }
-
-        if (timeout > 10) {
-            timeout = 99
-            break
-        }
-    }
-
-    if (timeout == 0) {
-        if(!again) {
-            mStatus = 8
-        }
-        return true
-    } else if (again) {
-        return false
-    } else {
-        await page.goto('https://myaccount.google.com/recovery/email', { waitUntil: 'load', timeout: 0 })
-        await delay(1000)
-        return await waitForRecoveryType(recovery, true)
     }
 }
 
@@ -445,30 +368,30 @@ async function waitForPage(type) {
         } else if(type == 6) {
             timeout++
             await delay(1000)
-            try {
-                let OSID = 0
-                let cookies = await page.cookies()
 
-                for (let i = 0; i < cookies.length; i++) {
-                    if (cookies[i]['name'] == 'SSID') {
-                        OSID++
-                    } else if (cookies[i]['name'] == 'HSID') {
-                        OSID++
-                    } else if (cookies[i]['name'] == 'APISID') {
-                        OSID++
-                    }
-                }
-
-                if (OSID == 3) {
-                    timeout = 0
-                    break
-                }
-            } catch (error) {}
-        } else if (type == 7) {
-            let data = await exists('input[type="text"][inputmode="numeric"]')
-            if (data) {
+            if (url.startsWith('https://myaccount.google.com/phone')) {
                 timeout = 0
                 break
+            } else {
+                try {
+                    let OSID = 0
+                    let cookies = await page.cookies()
+    
+                    for (let i = 0; i < cookies.length; i++) {
+                        if (cookies[i]['name'] == 'SSID') {
+                            OSID++
+                        } else if (cookies[i]['name'] == 'HSID') {
+                            OSID++
+                        } else if (cookies[i]['name'] == 'APISID') {
+                            OSID++
+                        }
+                    }
+    
+                    if (OSID == 3) {
+                        timeout = 0
+                        break
+                    }
+                } catch (error) {}
             }
         }
 
@@ -535,18 +458,47 @@ async function waitForUser() {
     return timeout == 0
 }
 
-async function addRecovery() {
-    let element = 'button[class="VfPpkd-LgbsSe VfPpkd-LgbsSe-OWXEXe-k8QpJ VfPpkd-LgbsSe-OWXEXe-dgl2Hf nCP5yc AjY5Oe DuMIQc LQeN7 wMI9H"]'
-    let data = await exists(element)
-    if (data) {
-        await page.click(element)
-    } else {
-        element = 'button[class="UywwFc-LgbsSe UywwFc-LgbsSe-OWXEXe-dgl2Hf wMI9H"]'
-        data = await exists(element)
-        if (data) {
-            await page.click(element)
+async function addRecovery(recovery) {
+    try {
+        let cookies = await page.cookies()
+        let cookie = ''
+
+        for (let i = 0; i < cookies.length; i++) {
+            cookie += cookies[i]['name']+'='+cookies[i]['value']+'; '
         }
-    }
+
+        const response = await axios.post('https://accounts.google.com/_/signup/validatesecondaryemail', getRecoveryData(recovery), {
+              params: {
+                'hl': 'en',
+                'TL': TL
+              },
+              headers: {
+                'authority': 'accounts.google.com',
+                'accept': '*/*',
+                'accept-language': 'en-US,en;q=0.9',
+                'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
+                'cookie': cookie,
+                'google-accounts-xsrf': '1',
+                'origin': 'https://accounts.google.com',
+                'sec-ch-ua': '"Not:A-Brand";v="99", "Chromium";v="112"',
+                'sec-ch-ua-mobile': '?0',
+                'sec-ch-ua-platform': '"Windows"',
+                'sec-fetch-dest': 'empty',
+                'sec-fetch-mode': 'cors',
+                'sec-fetch-site': 'same-origin',
+                'user-agent': mUserAgent,
+                'x-same-domain': '1'
+            }
+        })
+
+        let body = response.data
+        let data = JSON.parse(body.substring(body.indexOf('[['), body.length))
+        if(data[0][1] == 1) {
+            return true
+        }
+    } catch (error) {}
+
+    return false
 }
 
 async function getTL() {
@@ -741,7 +693,7 @@ async function getGmailList() {
         }
         let name =  list[Math.floor((Math.random() * list.length))]
         try {
-            await axios.delete(BASE_URL+'name/'+NAME+'/'+name+'.json')
+            await axios.delete(BASE_URL+'number/'+name+'.json')
         } catch (error) {}
 
         output = response.data[name]['list']
@@ -759,6 +711,30 @@ async function getGmailList() {
     return await getGmailList()
 }
 
+function setRequestData(data) {
+    try {
+        let split = data.split('&')
+        for (let i = 0; i < split.length; i++) {
+            try {
+                let temp = split[i].split('=')
+                if (temp.length == 2) {
+                    if (temp[0] == 'TL') {
+                        TL = temp[1]
+                    } else if (temp[0] == 'azt') {
+                        azt = temp[1]
+                    } else if (temp[0] == 'deviceinfo') {
+                        deviceinfo = temp[1]
+                    }
+                }
+            } catch (error) {
+                console.log(error)
+            }
+        }
+    } catch (error) {
+        console.log(error)
+    }
+}
+
 async function errorCapture() {
     try {
         await page.screenshot({
@@ -767,6 +743,16 @@ async function errorCapture() {
         let content = await page.content()
         fs.writeFileSync('timeout', content)
     } catch (error) {}
+}
+
+function getRecoveryData(recovery) {
+    if (deviceinfo == null) {
+        deviceinfo = '%5Bnull%2Cnull%2Cnull%2C%5B%5D%2Cnull%2C%22US%22%2Cnull%2Cnull%2Cnull%2C%22EmbeddedSetupAndroid%22%2Cnull%2C%5B0%2Cnull%2C%5B%5D%2Cnull%2Cnull%2Cnull%2Cnull%2Cnull%2Cnull%2Cnull%2Cnull%2Cnull%2Cnull%2Cnull%2Cnull%2Cnull%2Cnull%2Cnull%2Cnull%2Cnull%2Cnull%2Cnull%2C7%2Cnull%2Cnull%2C%5B%5D%2Cnull%2Cnull%2Cnull%2Cnull%2C%5B%5D%5D%2C1%2Cnull%2Cnull%2Cnull%2C1%2Cnull%2C0%2C1%2C%22%22%2Cnull%2Cnull%2C2%2C1%5D'
+    }
+    if (azt) {
+       return  'continue=https%3A%2F%2Fwww.google.com%3Fhl%3Den-US&ec=GAlA8wE&flowEntry=AddSession&hl=en&theme=glif&f.req=%5B%22TL%3A'+TL+'%22%2C%22'+encodeURIComponent(recovery)+'%22%5D&azt='+azt+'&cookiesDisabled=false&deviceinfo='+deviceinfo+'&gmscoreversion=undefined&flowName=GlifWebSignIn&checkConnection=youtube%3A94%3A0&checkedDomains=youtube&pstMsg=1&'
+    }
+    return 'continue=https%3A%2F%2Fwww.google.com%3Fhl%3Den-US&ec=GAlA8wE&flowEntry=AddSession&hl=en&theme=glif&f.req=%5B%22TL%3A'+TL+'%22%2C%22'+encodeURIComponent(recovery)+'%22%5D&cookiesDisabled=false&deviceinfo='+deviceinfo+'&gmscoreversion=undefined&flowName=GlifWebSignIn&checkConnection=youtube%3A94%3A0&checkedDomains=youtube&pstMsg=1&'
 }
 
 function getRandomNumber(size) {
