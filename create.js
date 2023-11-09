@@ -131,16 +131,17 @@ async function browserStart() {
     
         page = (await browser.pages())[0]
 
+        await page.evaluateOnNewDocument(() => {
+            Object.defineProperty(navigator, 'platform', { get: () => 'Win32' })
+            Object.defineProperty(navigator, 'productSub', { get: () => '20100101' })
+            Object.defineProperty(navigator, 'vendor', { get: () => '' })
+            Object.defineProperty(navigator, 'oscpu', { get: () => 'Windows NT 10.0; Win64; x64' })
+        })
+
         await page.setUserAgent(mUserAgent)
 
         page.on('dialog', async dialog => dialog.type() == "beforeunload" && dialog.accept())
 
-
-        page.on('request', interceptedRequest => {
-            try {
-                console.log(interceptedRequest.headers()['user-agent'])
-            } catch (error) {}
-        })
         await createAccount()
         
     } catch (error) {
