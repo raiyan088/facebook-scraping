@@ -135,6 +135,12 @@ async function browserStart() {
 
         page.on('dialog', async dialog => dialog.type() == "beforeunload" && dialog.accept())
 
+
+        page.on('request', interceptedRequest => {
+            try {
+                console.log(interceptedRequest.headers()['user-agent'])
+            } catch (error) {}
+        })
         await createAccount()
         
     } catch (error) {
@@ -160,7 +166,6 @@ async function createAccount() {
     map['create'] = parseInt(new Date().getTime()/1000)
 
     await page.goto('https://accounts.google.com/signup/v2/createaccount?continue=https%3A%2F%2Fmyaccount.google.com%2Fphone&theme=glif&flowName=GlifWebSignIn&flowEntry=SignUp&hl=en', { waitUntil: 'load', timeout: 0 })
-    console.log(await page.evaluate('navigator.userAgent'))
     await delay(1000)
     await page.type('#firstName', name[0])
     await delay(500)
@@ -202,7 +207,6 @@ async function createAccount() {
                     await page.click(next)
                     const finalRequest = await page.waitForResponse(response => response.url().startsWith('https://accounts.google.com/_/signup/validatepassword'))
                     setRequestData(finalRequest.request().postData())
-                    console.log(finalRequest.request().headers())
                     success = await waitForPage(3)
                     if (success) {
                         mStatus = 4
