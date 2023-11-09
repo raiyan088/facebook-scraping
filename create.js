@@ -125,18 +125,30 @@ async function browserStart() {
                 '--disable-setuid-sandbox',
                 '--ignore-certificate-errors',
                 '--ignore-certificate-errors-skip-list',
-                '--disable-dev-shm-usage'
+                '--disable-dev-shm-usage',
+                '--user-agent='+mUserAgent
             ]
         })
     
         page = (await browser.pages())[0]
 
-        await page.evaluateOnNewDocument(() => {
+        await page.evaluateOnNewDocument((userAgent) => {
             Object.defineProperty(navigator, 'platform', { get: () => 'Win32' })
             Object.defineProperty(navigator, 'productSub', { get: () => '20100101' })
             Object.defineProperty(navigator, 'vendor', { get: () => '' })
             Object.defineProperty(navigator, 'oscpu', { get: () => 'Windows NT 10.0; Win64; x64' })
-        })
+
+            let open = window.open
+
+            window.open = (...args) => {
+                let newPage = open(...args)
+                Object.defineProperty(newPage.navigator, 'userAgent', { get: () => userAgent })
+                return newPage
+            }
+
+            window.open.toString = () => 'function open() { [native code] }'
+
+        }, mUserAgent)
 
         await page.setUserAgent(mUserAgent)
 
