@@ -60,12 +60,12 @@ async function connect02() {
         if(data.toString().includes('||---EXIT----')) {
             connect02()
         }
-        if (load03) {
-            if (data.toString().includes('||---LOAD----')) {
-                load03 = false
-                connect03()
-            }
-        }
+        // if (load03) {
+        //     if (data.toString().includes('||---LOAD----')) {
+        //         load03 = false
+        //         connect03()
+        //     }
+        // }
     })
 }
 
