@@ -4,7 +4,7 @@ const axios = require('axios')
 const fs = require('fs')
 
 
-let NUMBER = true
+let NUMBER = false
 let NAME = 'english'
 //let NAME = 'bangle_name'
 
