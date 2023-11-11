@@ -5,6 +5,8 @@ const fs = require('fs')
 
 
 let NUMBER = false
+//let mDomain = 'outlook'
+let mDomain = 'yahoo'
 let NAME = 'english'
 //let NAME = 'bangle_name'
 
@@ -175,7 +177,7 @@ async function createAccount() {
     let name = mName[0].split(' ')
     let map = {}
     map['password'] = getRandomPassword()
-    map['recovery'] = recovery+'@outlook.com'
+    map['recovery'] = recovery+'@'+mDomain+'.com'
     map['create'] = parseInt(new Date().getTime()/1000)
 
     await page.goto('https://accounts.google.com/signup/v2/createaccount?continue=https%3A%2F%2Fmyaccount.google.com%2Fphone&theme=glif&flowName=GlifWebSignIn&flowEntry=SignUp&hl=en', { waitUntil: 'load', timeout: 0 })
