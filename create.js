@@ -5,8 +5,8 @@ const fs = require('fs')
 
 
 let NUMBER = false
-let mDomain = 'outlook'
-//let mDomain = 'yahoo'
+//let mDomain = 'outlook'
+let mDomain = 'yahoo'
 let NAME = 'english'
 //let NAME = 'bangle_name'
 
