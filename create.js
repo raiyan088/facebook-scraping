@@ -167,10 +167,9 @@ async function browserStart() {
 async function createAccount() {
     console.log('|*|-START: '+getAccountSize(1)+'-')
 
-    USER = mName[0].toLowerCase().replace(/[^a-z]/g, '')+getRandomNumber(3,7)
-    //let user = getRandomNumber(5,5)+mName[0].toLowerCase().replace(/[^a-z]/g, '')
+    USER = await getUserName(mName[0].toLowerCase().replace(/[^a-z]/g, ''), getRandomNumber(2,4))
     if (NUMBER) {
-        USER = mGmail[0].replace('@gmail.com', '')+''
+        USER = mGmail[0].replace('@gmail.com', '').toString()
     }
 
     let recovery = mRecovery[Math.floor((Math.random() * mRecovery.length))]
@@ -448,7 +447,7 @@ async function waitForUser() {
                     mGmail.shift()
                     if (mGmail.length > 0) {
                         mStart = new Date().getTime()+80000
-                        USER = mGmail[0].replace('@gmail.com', '')+''
+                        USER = mGmail[0].replace('@gmail.com', '').toString()
                         let input = 'input[class="whsOnd zHQkBf"]'
                         await page.focus(input)
                         await page.keyboard.down('Control')
@@ -464,7 +463,7 @@ async function waitForUser() {
                         break
                     }
                 } else {
-                    USER = mName[0].toLowerCase().replace(/[^a-z]/g, '')+getRandomNumber(3,7)
+                    USER = await getUserName(mName[0].toLowerCase().replace(/[^a-z]/g, ''), getRandomNumber(2,4))
     
                     mStart = new Date().getTime()+80000
                     await page.focus(input)
@@ -771,6 +770,13 @@ async function errorCapture() {
         let content = await page.content()
         fs.writeFileSync('timeout', content)
     } catch (error) {}
+}
+
+async function getUserName(name, number) {
+    if (name.length > 11) {
+        return name.substring(0, 11)+number
+    }
+    return name+number
 }
 
 function getRecoveryData(recovery) {
