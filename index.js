@@ -29,7 +29,7 @@ process.argv.slice(2).forEach(function (data, index) {
         if (index == 0) {
             let size = parseInt(data)
         
-            SIZE = (size-1)*5
+            SIZE = (size-1)*10
 
             console.log('★★★--START--★★★')
 

@@ -22,13 +22,15 @@ puppeteer.use(StealthPlugin())
 
 process.argv.slice(2).forEach(function (data, index) {
     try {
-        mData = data
-        if (data.length == 1) {
-            SERVER = 'gmail_0'+data
-        } else {
-            SERVER = 'gmail_'+data
+        if (index == 0) {
+            mData = data
+            if (data.length == 1) {
+                SERVER = 'gmail_0'+data
+            } else {
+                SERVER = 'gmail_'+data
+            }
+            readCookies()
         }
-        readCookies()
     } catch (error) {}
 })
 
