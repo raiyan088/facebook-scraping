@@ -5,8 +5,8 @@ const fs = require('fs')
 
 
 let NUMBER = false
-//let mDomain = 'outlook'
-let mDomain = 'yahoo'
+let mDomain = 'outlook'
+//let mDomain = 'yahoo'
 let NAME = 'english'
 //let NAME = 'bangle_name'
 
@@ -19,6 +19,7 @@ let mGmail = []
 let IP = null
 let mError = 0
 let mStatus = 0
+let mUserError = 0
 let TL = null
 let azt = null
 let deviceinfo = null
@@ -172,6 +173,8 @@ async function createAccount() {
         USER = mGmail[0].replace('@gmail.com', '').toString()
     }
 
+    mUserError = 0
+
     let recovery = mRecovery[Math.floor((Math.random() * mRecovery.length))]
     let name = mName[0].split(' ')
     let map = {}
@@ -194,7 +197,7 @@ async function createAccount() {
             let year = getRandomYear()
             let month = getRandomMonth()
             let day = getRandomDay()
-            await page.goto('https://accounts.google.com/signup/v2/birthdaygender?continue=https%3A%2F%2Fmyaccount.google.com%2Fphone&source=com.google.android.gms&xoauth_display_name=Android%20Phone&canFrp=1&canSk=1&mwdm=MWDM_QR_CODE&lang=en&langCountry=en_us&hl=en-US&cc=us&multilogin=1&use_native_navigation=0&cbsc=1&flowName=EmbeddedSetupAndroid&TL='+TL, { waitUntil: 'load', timeout: 0 })
+            await page.goto('https://accounts.google.com/signup/v2/birthdaygender?continue=https%3A%2F%2Fmyaccount.google.com%2Fphone&source=com.google.android.gms&xoauth_display_name=Android%20Phone&canFrp=1&canSk=1&mwdm=MWDM_QR_CODE&lang=en&langCountry=en_us&hl=en-US&cc=us&multilogin=1&use_native_navigation=0&cbsc=1&hide_status_bar=1&flowName=EmbeddedSetupAndroid&TL='+TL, { waitUntil: 'load', timeout: 0 })
             let next = 'button[class="VfPpkd-LgbsSe VfPpkd-LgbsSe-OWXEXe-k8QpJ VfPpkd-LgbsSe-OWXEXe-dgl2Hf nCP5yc AjY5Oe DuMIQc LQeN7 qIypjc TrZEUc lw1w4b"]'
             let input = 'input[class="whsOnd zHQkBf"]'
             await delay(1000)
@@ -463,7 +466,12 @@ async function waitForUser() {
                         break
                     }
                 } else {
-                    USER = await getUserName(mName[0].toLowerCase().replace(/[^a-z]/g, ''), getRandomNumber(2,4))
+                    mUserError++
+                    if (mUserError > 3) {
+                        mUserError = 3
+                    }
+                    
+                    USER = await getUserName(mName[0].toLowerCase().replace(/[^a-z]/g, ''), getRandomNumber(2+mUserError,4+mUserError))
     
                     mStart = new Date().getTime()+80000
                     await page.focus(input)
