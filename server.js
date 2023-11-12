@@ -274,9 +274,7 @@ async function waitForLoginStatus() {
                     break
                 }
             }
-        } catch (error) {
-            break
-        }
+        } catch (error) {}
     }
     return status
 }
