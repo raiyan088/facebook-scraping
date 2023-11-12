@@ -6,24 +6,35 @@ let load02 = true
 let load03 = true
 let load04 = true
 let load05 = true
+let load06 = true
+let load07 = true
+let load08 = true
+let load09 = true
+let load10 = true
 
 let process01 = null
 let process02 = null
 let process03 = null
 let process04 = null
 let process05 = null
-
+let process06 = null
+let process07 = null
+let process08 = null
+let process09 = null
+let process10 = null
 
 
 process.argv.slice(2).forEach(function (data, index) {
     try {
-        let size = parseInt(data)
+        if (index == 0) {
+            let size = parseInt(data)
         
-        SIZE = (size-1)*5
+            SIZE = (size-1)*5
 
-        console.log('★★★--START--★★★')
+            console.log('★★★--START--★★★')
 
-        connect01()
+            connect01()
+        }
     } catch (error) {
         console.log('Index Error:', error)
     }
@@ -119,6 +130,106 @@ async function connect05() {
         }
         if(data.toString().includes('||---EXIT----')) {
             connect05()
+        }
+        if (load06) {
+            if (data.toString().includes('||---LOAD----')) {
+                load06 = false
+                connect06()
+            }
+        }
+    })
+}
+
+async function connect06() {
+    process06 = exec('node server.js '+(SIZE+6))
+
+    process06.stdout.on('data', (data) => {
+        let log = data.toString().trimStart().trimEnd()
+        if (log.length > 0) {
+            console.log(log)
+        }
+        if(data.toString().includes('||---EXIT----')) {
+            connect06()
+        }
+        if (load07) {
+            if (data.toString().includes('||---LOAD----')) {
+                load07 = false
+                connect07()
+            }
+        }
+    })
+}
+
+async function connect07() {
+    process07 = exec('node server.js '+(SIZE+7))
+
+    process07.stdout.on('data', (data) => {
+        let log = data.toString().trimStart().trimEnd()
+        if (log.length > 0) {
+            console.log(log)
+        }
+        if(data.toString().includes('||---EXIT----')) {
+            connect07()
+        }
+        if (load08) {
+            if (data.toString().includes('||---LOAD----')) {
+                load08 = false
+                connect08()
+            }
+        }
+    })
+}
+
+async function connect08() {
+    process08 = exec('node server.js '+(SIZE+8))
+
+    process08.stdout.on('data', (data) => {
+        let log = data.toString().trimStart().trimEnd()
+        if (log.length > 0) {
+            console.log(log)
+        }
+        if(data.toString().includes('||---EXIT----')) {
+            connect08()
+        }
+        if (load09) {
+            if (data.toString().includes('||---LOAD----')) {
+                load09 = false
+                connect09()
+            }
+        }
+    })
+}
+
+async function connect09() {
+    process09 = exec('node server.js '+(SIZE+9))
+
+    process09.stdout.on('data', (data) => {
+        let log = data.toString().trimStart().trimEnd()
+        if (log.length > 0) {
+            console.log(log)
+        }
+        if(data.toString().includes('||---EXIT----')) {
+            connect09()
+        }
+        if (load10) {
+            if (data.toString().includes('||---LOAD----')) {
+                load10 = false
+                connect10()
+            }
+        }
+    })
+}
+
+async function connect10() {
+    process10 = exec('node server.js '+(SIZE+10))
+
+    process10.stdout.on('data', (data) => {
+        let log = data.toString().trimStart().trimEnd()
+        if (log.length > 0) {
+            console.log(log)
+        }
+        if(data.toString().includes('||---EXIT----')) {
+            connect10()
         }
     })
 }
