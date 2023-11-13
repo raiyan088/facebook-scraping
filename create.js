@@ -4,7 +4,7 @@ const axios = require('axios')
 const fs = require('fs')
 
 
-let NUMBER = false
+let NUMBER = true
 let mDomain = 'outlook'
 //let mDomain = 'yahoo'
 let NAME = 'english'
