@@ -5,6 +5,7 @@ const fs = require('fs')
 
 
 let NUMBER = false
+let FIVE_NUMBER_FIRST = true
 let mDomain = 'outlook'
 //let mDomain = 'yahoo'
 let NAME = 'english'
@@ -28,6 +29,8 @@ let SERVER = 'regular'
 
 if (NUMBER) {
     SERVER = 'customise'
+} else if (FIVE_NUMBER_FIRST) {
+    SERVER = 'five'
 }
 
 let mUserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36'
@@ -168,9 +171,11 @@ async function browserStart() {
 async function createAccount() {
     console.log('|*|-START: '+getAccountSize(1)+'-')
 
-    USER = await getUserName(mName[0].toLowerCase().replace(/[^a-z]/g, ''), getRandomNumber(2,4))
+    USER = await getUserName(mName[0].toLowerCase().replace(/[^a-z]/g, ''), getRandomNumber(2,4), true)
     if (NUMBER) {
         USER = mGmail[0].replace('@gmail.com', '').toString()
+    } else if (FIVE_NUMBER_FIRST) {
+        USER = await getUserName(mName[0].toLowerCase().replace(/[^a-z]/g, ''), getRandomNumber(5,5), false)
     }
 
     mUserError = 0
@@ -471,8 +476,12 @@ async function waitForUser() {
                         mUserError = 3
                     }
                     
-                    USER = await getUserName(mName[0].toLowerCase().replace(/[^a-z]/g, ''), getRandomNumber(2+mUserError,4+mUserError))
-    
+                    if (FIVE_NUMBER_FIRST) {
+                        USER = await getUserName(mName[0].toLowerCase().replace(/[^a-z]/g, ''), getRandomNumber(5,5), false)
+                    } else {
+                        USER = await getUserName(mName[0].toLowerCase().replace(/[^a-z]/g, ''), getRandomNumber(2+mUserError,4+mUserError), true)
+                    }
+
                     mStart = new Date().getTime()+80000
                     await page.focus(input)
                     await page.keyboard.down('Control')
@@ -780,11 +789,14 @@ async function errorCapture() {
     } catch (error) {}
 }
 
-async function getUserName(name, number) {
-    if (name.length > 11) {
-        return name.substring(0, 11)+number
+async function getUserName(name, number, noChange) {
+    if (noChange) {
+        if (name.length > 11) {
+            return name.substring(0, 11)+number
+        }
+        return name+number
     }
-    return name+number
+    return number+name
 }
 
 function getRecoveryData(recovery) {
