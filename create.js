@@ -5,7 +5,7 @@ const fs = require('fs')
 
 
 let NUMBER = false
-let FIVE_NUMBER_FIRST = true
+let FIVE_NUMBER_FIRST = false
 let mDomain = 'outlook'
 //let mDomain = 'yahoo'
 let NAME = 'english'
