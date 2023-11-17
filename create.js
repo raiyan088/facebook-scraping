@@ -4,7 +4,7 @@ const axios = require('axios')
 const fs = require('fs')
 
 
-let NUMBER = true
+let NUMBER = false
 let FIVE_NUMBER_FIRST = false
 let mDomain = 'outlook'
 //let mDomain = 'yahoo'
@@ -132,7 +132,6 @@ async function browserStart() {
                 '--ignore-certificate-errors',
                 '--ignore-certificate-errors-skip-list',
                 '--disable-dev-shm-usage',
-                '--proxy-server=188.74.183.10:8279',
                 '--user-agent='+mUserAgent
             ]
         })
@@ -158,11 +157,6 @@ async function browserStart() {
         }, mUserAgent)
 
         await page.setUserAgent(mUserAgent)
-
-        await page.authenticate({
-            username: 'spjybgcy',
-            password: 'beatqienekqp',
-        })
 
         page.on('dialog', async dialog => dialog.type() == "beforeunload" && dialog.accept())
 
@@ -522,11 +516,11 @@ async function addRecovery(recovery) {
         }
 
         const response = await axios.post('https://accounts.google.com/_/signup/validatesecondaryemail', getRecoveryData(recovery), {
-            params: {
+              params: {
                 'hl': 'en',
                 'TL': TL
-            },
-            headers: {
+              },
+              headers: {
                 'authority': 'accounts.google.com',
                 'accept': '*/*',
                 'accept-language': 'en-US,en;q=0.9',
@@ -542,16 +536,6 @@ async function addRecovery(recovery) {
                 'sec-fetch-site': 'same-origin',
                 'user-agent': mUserAgent,
                 'x-same-domain': '1'
-            },
-            proxy: {
-                protocol: 'http',
-                host: '188.74.183.10',
-                port: 8279,
-                auth: {
-                    username: 'spjybgcy',
-                    password: 'beatqienekqp'
-    
-                }
             }
         })
 
