@@ -11,18 +11,23 @@ let page = null
 let SERVER = ''
 let mLog = false
 let mData = 0
+let mSize = 0
 
-let startTime = new Date().toUTCString()
+let COLAB = [
+    '1f0oVyQCqELtvbRQTyyBkmDpar_e4nrjY',
+    '1UA8fpWKIJ5GGF4EwjBLYzyxaC1VA780Q'
+]
 
 let BASE_URL = Buffer.from('aHR0cHM6Ly9kYXRhYmFzZTA4OC1kZWZhdWx0LXJ0ZGIuZmlyZWJhc2Vpby5jb20vcmFpeWFuMDg4L2dtYWlsLw==', 'base64').toString('ascii')
 
-let loginUrl = 'https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Fcolab.research.google.com%2Fdrive%2F1f0oVyQCqELtvbRQTyyBkmDpar_e4nrjY&ec=GAZAqQM&ifkv=AVQVeywxh6y4_WIE0MDR0rgdX-zq-dVw_5JlyI40eMGfPdYPrn0ax8ghA0BlXIfYbZNrWur_L03t&passive=true&flowName=GlifWebSignIn&flowEntry=ServiceLogin&dsh=S-1677059645%3A1698307841046563&theme=glif'
+let loginUrl = 'https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Fcolab.research.google.com%2Fdrive%2F'+COLAB[mSize]+'&ec=GAZAqQM&ifkv=AVQVeywxh6y4_WIE0MDR0rgdX-zq-dVw_5JlyI40eMGfPdYPrn0ax8ghA0BlXIfYbZNrWur_L03t&passive=true&flowName=GlifWebSignIn&flowEntry=ServiceLogin&dsh=S-1677059645%3A1698307841046563&theme=glif'
 
 puppeteer.use(StealthPlugin())
 
 process.argv.slice(2).forEach(function (data, index) {
     try {
         if (index == 0) {
+            mSize = 0
             mData = data
             if (data.length == 1) {
                 SERVER = 'gmail_0'+data
@@ -30,6 +35,8 @@ process.argv.slice(2).forEach(function (data, index) {
                 SERVER = 'gmail_'+data
             }
             readCookies()
+        } else {
+            mSize = 1
         }
     } catch (error) {}
 })
@@ -61,7 +68,6 @@ async function readCookies() {
             process.exit(0)
         }
     } catch (error) {
-        console.log(error);
         console.log('||---EXIT----'+getID())
         process.exit(0)
     }
@@ -97,7 +103,7 @@ async function startBrowser(data) {
 
         if (data['cookies']) {
             await page.setCookie(...data['cookies'])
-            await page.goto('https://colab.research.google.com/drive/1f0oVyQCqELtvbRQTyyBkmDpar_e4nrjY', { waitUntil: 'load', timeout: 0 })
+            await page.goto('https://colab.research.google.com/drive/'+COLAB[mSize], { waitUntil: 'load', timeout: 0 })
         } else {
             mLoginFailed = true
         }
@@ -145,7 +151,7 @@ async function startBrowser(data) {
                 await waitForDisconnected()
                 await delay(2000)
                 console.log('||--DISMISS--'+getID())
-                await page.goto('https://colab.research.google.com/drive/1f0oVyQCqELtvbRQTyyBkmDpar_e4nrjY', { waitUntil: 'load', timeout: 0 })
+                await page.goto('https://colab.research.google.com/drive/'+COLAB[mSize], { waitUntil: 'load', timeout: 0 })
                 await waitForSelector('colab-connect-button')
                 await delay(2000)
                 await saveCookies()
@@ -197,9 +203,8 @@ async function logInGmail(data) {
         let status = await waitForLoginStatus()
         if (status == 1) {
             await delay(2000)
-            await page.waitForSelector('input[type="password"]')
-            await page.type('input[type="password"]', data['pass'])
-            await page.waitForSelector('#passwordNext')
+            await waitForPasswordType(data['pass'])
+            await delay(500)
             await page.click('#passwordNext')
 
             let status = await waitForLoginSuccess(false)
@@ -293,7 +298,7 @@ async function waitForLoginSuccess(selection) {
                 status = 1
                 break
             } else if (pageUrl.startsWith('https://gds.google.com/web/chip')) {
-                await page.goto('https://colab.research.google.com/drive/1f0oVyQCqELtvbRQTyyBkmDpar_e4nrjY', { waitUntil: 'load', timeout: 0 })
+                await page.goto('https://colab.research.google.com/drive/'+COLAB[mSize], { waitUntil: 'load', timeout: 0 })
                 status = 1
                 break
             } else if (pageUrl.startsWith('https://accounts.google.com/') && pageUrl.includes('challenge') && pageUrl.includes('pwd')) {
@@ -335,6 +340,35 @@ async function waitForLoginSuccess(selection) {
     }
 
     return status
+}
+
+async function waitForPasswordType(password) {
+    
+    while (true) {
+        await delay(1000)
+
+        try {
+            let data = await exists('input[type="password"]')
+            if (data) {
+                await page.type('input[type="password"]', password)
+
+                let success = await page.evaluate((password) => {
+                    try {
+                        let root = document.querySelector('input[type="password"]')
+                        if (root && root.value == password) {
+                            return true
+                        }
+                    } catch (error) {}
+
+                    return false
+                }, password)
+
+                if (success) {
+                    break
+                }
+            }
+        } catch (error) {}
+    }
 }
 
 async function waitForFinish() {
