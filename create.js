@@ -9,7 +9,6 @@ let FIVE_NUMBER_FIRST = false
 let mDomain = 'outlook'
 //let mDomain = 'yahoo'
 let NAME = 'english'
-//let NAME = 'bangle_name'
 
 
 let mName = []
@@ -19,12 +18,12 @@ let mRecovery = []
 let mGmail = []
 let IP = null
 let mError = 0
-let mStatus = 0
 let mUserError = 0
 let TL = null
 let azt = null
 let deviceinfo = null
 let USER = null
+let BYPASS = true
 let SERVER = 'regular'
 
 if (NUMBER) {
@@ -56,7 +55,6 @@ setInterval(async() => {
                 process.exit(0)
             }
         } catch (error) {
-            console.log(error)
             console.log('|*|---ERROR---')
             process.exit(0)
         }
@@ -105,7 +103,6 @@ async function startWork() {
                     process.exit(0)
                 }
             } catch (error) {
-                console.log(error)
                 console.log('|*|---ERROR---')
                 process.exit(0)
             }
@@ -114,7 +111,6 @@ async function startWork() {
             process.exit(0)
         }
     } catch (error) {
-        console.log(error)
         console.log('|*|---ERROR---')
         process.exit(0)
     }
@@ -161,13 +157,28 @@ async function browserStart() {
 
         await page.setUserAgent(mUserAgent)
 
+        await page.setRequestInterception(true);
+
+        page.on('request', (request) => {
+            if (BYPASS) {
+                if (request.url().startsWith('https://accounts.google.com/_/signup/validatepassword')) {
+                    BYPASS = false
+                    setTimeout(async() => {
+                        await setPasswordResponse(request)
+                    }, 0)
+                } else {
+                    request.continue()
+                }
+            } else {
+                request.continue()
+            }
+        })
+
         page.on('dialog', async dialog => dialog.type() == "beforeunload" && dialog.accept())
 
         await createAccount()
         
     } catch (error) {
-        console.log(error)
-        await errorCapture()
         console.log('|*|---ERROR---')
         process.exit(0)
     }
@@ -175,6 +186,10 @@ async function browserStart() {
 
 async function createAccount() {
     console.log('|*|-START: '+getAccountSize(1)+'-')
+
+    if(mName.length == 0) {
+        mName = await getNameList()
+    }
 
     USER = await getUserName(mName[0].toLowerCase().replace(/[^a-z]/g, ''), getRandomNumber(2,4), true)
     if (NUMBER) {
@@ -184,6 +199,7 @@ async function createAccount() {
     }
 
     mUserError = 0
+    BYPASS = true
 
     let recovery = mRecovery[Math.floor((Math.random() * mRecovery.length))]
     let name = mName[0].split(' ')
@@ -192,18 +208,20 @@ async function createAccount() {
     map['recovery'] = recovery+'@'+mDomain+'.com'
     map['create'] = parseInt(new Date().getTime()/1000)
 
-    await page.goto('https://accounts.google.com/signup/v2/createaccount?continue=https%3A%2F%2Fmyaccount.google.com%2Fphone&theme=glif&flowName=GlifWebSignIn&flowEntry=SignUp&hl=en', { waitUntil: 'load', timeout: 0 })
+    await page.goto('https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Fmyaccount.google.com%2Fphone&ec=GAZAmgQ&hl=en&ifkv=ASKXGp02anCczX2e5_7sfzXwUPu4IbDzTsjz1kF6WcVuBBlFeYMf3YScdRLQ75mnJe7gAZV8D1CC&passive=true&flowName=GlifWebSignIn&flowEntry=ServiceLogin&dsh=S218642338%3A1700425853047256&theme=glif', { waitUntil: 'load', timeout: 0 })
     await delay(1000)
-    await page.type('#firstName', name[0])
-    await delay(500)
-    await page.type('#lastName', name[1])
-    await delay(500)
-    await page.click('#collectNameNext')
+    await page.click('button[class="VfPpkd-LgbsSe VfPpkd-LgbsSe-OWXEXe-dgl2Hf ksBjEc lKxP2d LQeN7 FliLIb uRo0Xe TrZEUc Xf9GD"]')
+    await delay(1000)
+    await page.click('ul[class="VfPpkd-StrnGf-rymPhb DMZ54e"] > li')
     let success = await waitForPage(0)
     if (success) {
-        mStatus = 1
-        let TL = await getTL()
-        if (TL) {
+        await page.type('#firstName', name[0])
+        await delay(500)
+        await page.type('#lastName', name[1])
+        await delay(500)
+        await page.click('#collectNameNext')
+        let success = await waitForPage(1)
+        if (success) {
             let year = getRandomYear()
             let month = getRandomMonth()
             let day = getRandomDay()
@@ -219,9 +237,8 @@ async function createAccount() {
             await page.select('#gender', '1')
             await delay(500)
             await page.click(next)
-            success = await waitForPage(1)
+            success = await waitForPage(2)
             if (success) {
-                mStatus = 2
                 let custom = await exists('div[data-value="custom"]')
                 if (custom) {
                     await page.click('div[data-value="custom"]')
@@ -232,40 +249,33 @@ async function createAccount() {
                 await page.click(next)
                 success = await waitForUser()
                 if (success) {
-                    mStatus = 3
                     await page.type('input[name="Passwd"]', map['password'])
                     await delay(500)
                     await page.type('input[name="PasswdAgain"]', map['password'])
                     await delay(500)
                     await page.click(next)
-                    const finalRequest = await page.waitForResponse(response => response.url().startsWith('https://accounts.google.com/_/signup/validatepassword'))
-                    setRequestData(finalRequest.request().postData())
-                    let verification = await waitForVerification()
-                    if (verification == 1) {
-                        let skip = 'button[class="VfPpkd-LgbsSe VfPpkd-LgbsSe-OWXEXe-INsAgc VfPpkd-LgbsSe-OWXEXe-dgl2Hf Rj2Mlf OLiIxf PDpWxe P62QJc LQeN7 xYnMae TrZEUc lw1w4b"]'
-                        mStatus = 4
+                    success = await waitForPage(3)
+                    if (success) {
+                        let button = 'button[class="VfPpkd-LgbsSe VfPpkd-LgbsSe-OWXEXe-INsAgc VfPpkd-LgbsSe-OWXEXe-dgl2Hf Rj2Mlf OLiIxf PDpWxe P62QJc LQeN7 xYnMae TrZEUc lw1w4b"]'
                         await delay(500)
                         await page.type('#recoveryEmailId', map['recovery'])
                         await delay(500)
-                        await page.click(skip)
-                        success = await waitForPage(3)
+                        await page.click(button)
+                        success = await waitForPage(4)
                         if (success) {
                             await delay(500)
-                            await page.click(skip)
-                            success = await waitForPage(4)
+                            await waitForSkip()
+                            success = await waitForPage(5)
                             if (success) {
-                                mStatus = 5
                                 await page.click(next)
                                 await page.waitForNavigation({ waitUntil: ['load'] })
-                                success = await waitForPage(5)
+                                success = await waitForPage(6)
                                 if (success) {
-                                    mStatus = 6
+                                    await delay(500)
                                     await page.click(next)
-                                    await delay(1000)
-                                    await dialogConfirm()
-                                    success = await waitForPage(6)
+                                    success = await waitForPage(7)
                                     if (success) {
-                                        mStatus = 7
+                                        await delay(1000)
                                         await page.goto('https://myaccount.google.com/phone', { waitUntil: 'load', timeout: 0 })
                                         await saveData(USER, map)
                                         await delay(1000)
@@ -287,7 +297,6 @@ async function createAccount() {
                                                 process.exit(0)
                                             }
                                         } catch (error) {
-                                            console.log(error)
                                             console.log('|*|---ERROR---')
                                             process.exit(0)
                                         }
@@ -308,8 +317,8 @@ async function createAccount() {
                             await errorHandling()
                         }
                     } else {
-                        console.log('|*|--STATUS:'+verification+'-')
-                        process.exit(0)
+                        console.log('|*|-TIMEOUT:5-')
+                        await errorHandling()
                     }
                 } else {
                     console.log('|*|-TIMEOUT:4-')
@@ -354,7 +363,6 @@ async function errorHandling() {
             }
         }
     } catch (error) {
-        console.log(error)
         console.log('|*|---ERROR---')
         process.exit(0)
     }
@@ -367,49 +375,49 @@ async function waitForPage(type) {
         timeout++
         await delay(1000)
         let url = await page.url()
-        if (type == 0 && url.startsWith('https://accounts.google.com/signup/v2/birthdaygender') || url.startsWith('https://accounts.google.com/birthdaygender')) {
+        if (type == 0 && url.startsWith('https://accounts.google.com/lifecycle/steps/signup/name')) {
+            let data = await exists('#firstName')
+            if (data) {
+                timeout = 0
+                break
+            }
+        } else if (type == 1 && url.startsWith('https://accounts.google.com/lifecycle/steps/signup/birthdaygender')) {
             let data = await exists('#gender')
             if (data) {
                 timeout = 0
                 break
             }
-        } else if (type == 1 && url.startsWith('https://accounts.google.com/signup/v2/createusername') || url.startsWith('https://accounts.google.com/createusername')) {
+        } else if (type == 2 && url.startsWith('https://accounts.google.com/signup/v2/createusername')) {
             let data = await exists('#domainSuffix')
             if (data) {
                 timeout = 0
                 break
             }
-        } else if (type == 2 && url.startsWith('https://accounts.google.com/createpassword')) {
-            let data = await exists('input[name="Passwd"]')
+        } else if (type == 3 && url.startsWith('https://accounts.google.com/signup/v2/addrecoveryemail')) {
+            let data = await exists('#recoveryEmailId')
             if (data) {
                 timeout = 0
                 break
             }
-        } else if (type == 3 && url.startsWith('https://accounts.google.com/signup/v2/phonecollection')) {
+        } else if (type == 4 && url.startsWith('https://accounts.google.com/signup/v2/phonecollection')) {
             let data = await exists('#phoneNumberId')
             if (data) {
                 timeout = 0
                 break
             }
-        } else if (type == 4 && url.startsWith('https://accounts.google.com/signup/v2/confirmation')) {
+        } else if ((type == 4 || type == 5) && url.startsWith('https://accounts.google.com/signup/v2/confirmation')) {
             let data = await exists('div[class="wLBAL"]')
             if (data) {
                 timeout = 0
                 break
             }
-        } else if(type == 5 && url.startsWith('https://accounts.google.com/lifecycle/steps/signup/termsofservice')) {
+        } else if(type == 6 && url.startsWith('https://accounts.google.com/lifecycle/steps/signup/termsofservice')) {
             let data = await exists('#headingText')
             if (data) {
                 timeout = 0
                 break
             }
-        } else if(type == 5 && url.startsWith('https://accounts.google.com/lifecycle/steps/signup/personalizationchoice')) {
-            let data = await exists('div[class="zJKIV y5MMGc sD2Hod"]')
-            if (data) {
-                timeout = 0
-                break
-            }
-        } else if(type == 6) {
+        } else if(type == 7) {
             timeout++
             await delay(1000)
 
@@ -447,52 +455,6 @@ async function waitForPage(type) {
     await delay(1000)
 
     return timeout == 0
-}
-
-async function waitForVerification() {
-    let timeout = 0
-
-    while (true) {
-        timeout++
-        await delay(1000)
-        try {
-            let url = await page.url()
-            if (url.startsWith('https://accounts.google.com/signup/v2/addrecoveryemail')) {
-                let data = await exists('#recoveryEmailId')
-                if (data) {
-                    timeout = 1
-                    break
-                }
-            } else if (url.startsWith('https://accounts.google.com/addrecoveryphone')) {
-                let data = await exists('#phoneNumberId')
-                if (data) {
-                    timeout = 2
-                    break
-                }
-            } else if (url.startsWith('https://accounts.google.com/signup/v2/confirmation')) {
-                let data = await exists('div[class="wLBAL"]')
-                if (data) {
-                    timeout = 3
-                    break
-                }
-            } else if (url.startsWith('https://accounts.google.com/signup/v2/idvbyphone')) {
-                let data = await exists('#phoneNumberId')
-                if (data) {
-                    timeout = 4
-                    break
-                }
-            }
-        } catch (error) {}
-
-        if (timeout >= 30) {
-            timeout = 0
-            break
-        }
-    }
-
-    await delay(1000)
-
-    return timeout
 }
 
 async function waitForUser() {
@@ -569,76 +531,77 @@ async function waitForUser() {
     return timeout == 0
 }
 
-async function addRecovery(recovery) {
-    try {
-        let cookies = await page.cookies()
-        let cookie = ''
+async function setPasswordResponse(request) {
 
-        for (let i = 0; i < cookies.length; i++) {
-            cookie += cookies[i]['name']+'='+cookies[i]['value']+'; '
-        }
+    let body = request.postData()
 
-        const response = await axios.post('https://accounts.google.com/_/signup/validatesecondaryemail', getRecoveryData(recovery), {
-              params: {
-                'hl': 'en',
-                'TL': TL
-              },
-              headers: {
-                'authority': 'accounts.google.com',
-                'accept': '*/*',
-                'accept-language': 'en-US,en;q=0.9',
-                'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
-                'cookie': cookie,
-                'google-accounts-xsrf': '1',
-                'origin': 'https://accounts.google.com',
-                'sec-ch-ua': '"Not:A-Brand";v="99", "Chromium";v="112"',
-                'sec-ch-ua-mobile': '?0',
-                'sec-ch-ua-platform': '"Windows"',
-                'sec-fetch-dest': 'empty',
-                'sec-fetch-mode': 'cors',
-                'sec-fetch-site': 'same-origin',
-                'user-agent': mUserAgent,
-                'x-same-domain': '1'
-            }
-        })
-
-        let body = response.data
-        let data = JSON.parse(body.substring(body.indexOf('[['), body.length))
-        if(data[0][1] == 1) {
-            return true
-        }
-    } catch (error) {}
-
-    return false
-}
-
-async function getTL() {
-    let pageUrl = await page.url()
-
-    if (pageUrl.includes('TL=')) {
-        let temp = pageUrl.substring(pageUrl.indexOf('TL=')+3, pageUrl.length)
-        let index = temp.indexOf('&')
-        if (index > 0) {
-            return temp.substring(0, index)
-        } else {
-            return temp
-        }
+    if (body.includes('null%2Cnull%2C0%2C1%2C0%2C0%5D')) {
+        body = body.replace('null%2Cnull%2C0%2C1%2C0%2C0%5D', 'null%2cnull%2c0%2c0%2c0%2c0%5d')
     }
 
-    return null
+    await page.evaluate((url, body) => {
+        fetch(url, {
+            "headers": {
+                "accept": "*/*",
+                "accept-language": "en-US,en;q=0.9",
+                "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
+                "google-accounts-xsrf": "1",
+                "sec-fetch-dest": "empty",
+                "sec-fetch-mode": "cors",
+                "sec-fetch-site": "same-origin",
+                "x-client-data": "CKCPywE=",
+                "x-same-domain": "1"
+            },
+            "referrerPolicy": "strict-origin-when-cross-origin",
+            "body": body,
+            "method": "POST",
+            "mode": "cors",
+            "credentials": "include"
+        }).then((response) => response.text()).then((text) => {
+            document.response = JSON.stringify({ 
+                ok:true,
+                body: text
+            })
+        }).catch((error) => {
+            document.response = JSON.stringify({ ok:false })
+        })
+    }, request.url(), body)
+
+    let mOutput = ''
+
+    while (true) {
+        try {
+            let data = await page.evaluate(() => document.response)
+            
+            if (data) {
+                let json = JSON.parse(data)
+                if (json['ok']) {
+                    mOutput = json['body']
+                }
+                break
+            }
+        } catch (error) {}
+        await delay(500)
+    }
+
+    let contentType = 'application/json; charset=utf-8'
+
+    request.respond({
+        ok: true,
+        status: 200,
+        contentType,
+        body: mOutput,
+    })
 }
 
-async function skipNumber() {
-    return await page.evaluate(() => {
-        let root = document.querySelector('#skip')
-        if (root) {
-            root.click()
-        } else {
-            root = document.querySelector('button[class="VfPpkd-LgbsSe VfPpkd-LgbsSe-OWXEXe-dgl2Hf ksBjEc lKxP2d LQeN7 uRo0Xe TrZEUc lw1w4b"]')
-            if (root) {
-                root.click()
+async function waitForSkip() {
+    await page.evaluate(() => {
+        try {
+            let root = document.querySelectorAll('button[class="VfPpkd-LgbsSe VfPpkd-LgbsSe-OWXEXe-INsAgc VfPpkd-LgbsSe-OWXEXe-dgl2Hf Rj2Mlf OLiIxf PDpWxe P62QJc LQeN7 xYnMae TrZEUc lw1w4b"]')
+            if (root && root.length > 0) {
+                root[root.length-1].click()
             }
-        }
+        } catch (error) {}
     })
 }
 
@@ -662,13 +625,6 @@ async function exists(evement) {
         }
         return false
     }, evement)
-}
-
-async function dialogConfirm() {
-    let data = await exists('div[class="XfpsVe J9fJmf"]')
-    if (data) {
-        await page.click('div[class="XfpsVe J9fJmf"] > div[data-id="ssJRIf"]')
-    }
 }
 
 async function saveData(user, map) {
@@ -700,7 +656,6 @@ async function saveData(user, map) {
             fs.writeFileSync('temp_gmail.json', JSON.stringify(mGmail))
         }
     } catch (error) {
-        console.log(error)
         console.log('|*|---ERROR---')
     }
 }
@@ -823,26 +778,6 @@ async function getGmailList() {
     return await getGmailList()
 }
 
-function setRequestData(data) {
-    try {
-        let split = data.split('&')
-        for (let i = 0; i < split.length; i++) {
-            try {
-                let temp = split[i].split('=')
-                if (temp.length == 2) {
-                    if (temp[0] == 'TL') {
-                        TL = temp[1]
-                    } else if (temp[0] == 'azt') {
-                        azt = temp[1]
-                    } else if (temp[0] == 'deviceinfo') {
-                        deviceinfo = temp[1]
-                    }
-                }
-            } catch (error) {}
-        }
-    } catch (error) {}
-}
-
 async function errorCapture() {
     try {
         await page.screenshot({
@@ -863,15 +798,6 @@ async function getUserName(name, number, noChange) {
     return number+name
 }
 
-function getRecoveryData(recovery) {
-    if (deviceinfo == null) {
-        deviceinfo = '%5Bnull%2Cnull%2Cnull%2C%5B%5D%2Cnull%2C%22US%22%2Cnull%2Cnull%2Cnull%2C%22EmbeddedSetupAndroid%22%2Cnull%2C%5B0%2Cnull%2C%5B%5D%2Cnull%2Cnull%2Cnull%2Cnull%2Cnull%2Cnull%2Cnull%2Cnull%2Cnull%2Cnull%2Cnull%2Cnull%2Cnull%2Cnull%2Cnull%2Cnull%2Cnull%2Cnull%2Cnull%2C7%2Cnull%2Cnull%2C%5B%5D%2Cnull%2Cnull%2Cnull%2Cnull%2C%5B%5D%5D%2C1%2Cnull%2Cnull%2Cnull%2C1%2Cnull%2C0%2C1%2C%22%22%2Cnull%2Cnull%2C2%2C1%5D'
-    }
-    if (azt) {
-       return  'continue=https%3A%2F%2Fwww.google.com%3Fhl%3Den-US&ec=GAlA8wE&flowEntry=AddSession&hl=en&theme=glif&f.req=%5B%22TL%3A'+TL+'%22%2C%22'+encodeURIComponent(recovery)+'%22%5D&azt='+azt+'&cookiesDisabled=false&deviceinfo='+deviceinfo+'&gmscoreversion=undefined&flowName=GlifWebSignIn&checkConnection=youtube%3A94%3A0&checkedDomains=youtube&pstMsg=1&'
-    }
-    return 'continue=https%3A%2F%2Fwww.google.com%3Fhl%3Den-US&ec=GAlA8wE&flowEntry=AddSession&hl=en&theme=glif&f.req=%5B%22TL%3A'+TL+'%22%2C%22'+encodeURIComponent(recovery)+'%22%5D&cookiesDisabled=false&deviceinfo='+deviceinfo+'&gmscoreversion=undefined&flowName=GlifWebSignIn&checkConnection=youtube%3A94%3A0&checkedDomains=youtube&pstMsg=1&'
-}
 
 function getRandomNumber(start, end) {
     let N = ['0','1','2','3','4','5','6','7','8','9']
