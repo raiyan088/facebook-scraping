@@ -167,6 +167,7 @@ async function browserStart() {
         
     } catch (error) {
         console.log(error)
+        await errorCapture()
         console.log('|*|---ERROR---')
         process.exit(0)
     }
@@ -221,6 +222,11 @@ async function createAccount() {
             success = await waitForPage(1)
             if (success) {
                 mStatus = 2
+                let custom = await exists('div[data-value="custom"]')
+                if (custom) {
+                    await page.click('div[data-value="custom"]')
+                    await delay(500)
+                }
                 await page.type(input, USER)
                 await delay(500)
                 await page.click(next)
