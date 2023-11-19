@@ -56,6 +56,7 @@ setInterval(async() => {
                 process.exit(0)
             }
         } catch (error) {
+            console.log(error)
             console.log('|*|---ERROR---')
             process.exit(0)
         }
@@ -104,6 +105,7 @@ async function startWork() {
                     process.exit(0)
                 }
             } catch (error) {
+                console.log(error)
                 console.log('|*|---ERROR---')
                 process.exit(0)
             }
@@ -112,6 +114,7 @@ async function startWork() {
             process.exit(0)
         }
     } catch (error) {
+        console.log(error)
         console.log('|*|---ERROR---')
         process.exit(0)
     }
@@ -163,6 +166,7 @@ async function browserStart() {
         await createAccount()
         
     } catch (error) {
+        console.log(error)
         console.log('|*|---ERROR---')
         process.exit(0)
     }
@@ -277,6 +281,7 @@ async function createAccount() {
                                                 process.exit(0)
                                             }
                                         } catch (error) {
+                                            console.log(error)
                                             console.log('|*|---ERROR---')
                                             process.exit(0)
                                         }
@@ -343,6 +348,7 @@ async function errorHandling() {
             }
         }
     } catch (error) {
+        console.log(error)
         console.log('|*|---ERROR---')
         process.exit(0)
     }
@@ -688,6 +694,7 @@ async function saveData(user, map) {
             fs.writeFileSync('temp_gmail.json', JSON.stringify(mGmail))
         }
     } catch (error) {
+        console.log(error)
         console.log('|*|---ERROR---')
     }
 }
