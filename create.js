@@ -124,7 +124,7 @@ async function browserStart() {
         mStart = new Date().getTime()+90000
 
         let browser = await puppeteer.launch({
-            //headless: false,
+            headless: false,
             headless: 'new',
             args: [
                 '--no-sandbox',
@@ -202,7 +202,6 @@ async function createAccount() {
             let year = getRandomYear()
             let month = getRandomMonth()
             let day = getRandomDay()
-            await page.goto('https://accounts.google.com/signup/v2/birthdaygender?continue=https%3A%2F%2Fmyaccount.google.com%2Fphone&source=com.google.android.gms&xoauth_display_name=Android%20Phone&canFrp=1&canSk=1&mwdm=MWDM_QR_CODE&lang=en&langCountry=en_us&hl=en-US&cc=us&multilogin=1&use_native_navigation=0&cbsc=1&hide_status_bar=1&flowName=EmbeddedSetupAndroid&TL='+TL, { waitUntil: 'load', timeout: 0 })
             let next = 'button[class="VfPpkd-LgbsSe VfPpkd-LgbsSe-OWXEXe-k8QpJ VfPpkd-LgbsSe-OWXEXe-dgl2Hf nCP5yc AjY5Oe DuMIQc LQeN7 qIypjc TrZEUc lw1w4b"]'
             let input = 'input[class="whsOnd zHQkBf"]'
             await delay(1000)
@@ -224,19 +223,25 @@ async function createAccount() {
                 success = await waitForUser()
                 if (success) {
                     mStatus = 3
-                    await page.type(input, map['password'])
+                    await page.type('input[name="Passwd"]', map['password'])
+                    await delay(500)
+                    await page.type('input[name="PasswdAgain"]', map['password'])
                     await delay(500)
                     await page.click(next)
                     const finalRequest = await page.waitForResponse(response => response.url().startsWith('https://accounts.google.com/_/signup/validatepassword'))
                     setRequestData(finalRequest.request().postData())
-                    success = await waitForPage(3)
-                    if (success) {
+                    let verification = await waitForVerification()
+                    if (verification == 1) {
+                        let skip = 'button[class="VfPpkd-LgbsSe VfPpkd-LgbsSe-OWXEXe-INsAgc VfPpkd-LgbsSe-OWXEXe-dgl2Hf Rj2Mlf OLiIxf PDpWxe P62QJc LQeN7 xYnMae TrZEUc lw1w4b"]'
                         mStatus = 4
-                        await delay(1000)
-                        success = await addRecovery(map['recovery'])
+                        await delay(500)
+                        await page.type('#recoveryEmailId', map['recovery'])
+                        await delay(500)
+                        await page.click(skip)
+                        success = await waitForPage(3)
                         if (success) {
-                            await delay(1000)
-                            await skipNumber()
+                            await delay(500)
+                            await page.click(skip)
                             success = await waitForPage(4)
                             if (success) {
                                 mStatus = 5
@@ -292,8 +297,8 @@ async function createAccount() {
                             await errorHandling()
                         }
                     } else {
-                        console.log('|*|-TIMEOUT:5-')
-                        await errorHandling()
+                        console.log('|*|--STATUS:'+verification+'-')
+                        process.exit(0)
                     }
                 } else {
                     console.log('|*|-TIMEOUT:4-')
@@ -368,13 +373,13 @@ async function waitForPage(type) {
                 timeout = 0
                 break
             }
-        } else if (type == 3 && url.startsWith('https://accounts.google.com/addrecoveryphone')) {
+        } else if (type == 3 && url.startsWith('https://accounts.google.com/signup/v2/phonecollection')) {
             let data = await exists('#phoneNumberId')
             if (data) {
                 timeout = 0
                 break
             }
-        } else if ((type == 3 || type == 4) && url.startsWith('https://accounts.google.com/signup/v2/confirmation')) {
+        } else if (type == 4 && url.startsWith('https://accounts.google.com/signup/v2/confirmation')) {
             let data = await exists('div[class="wLBAL"]')
             if (data) {
                 timeout = 0
@@ -432,6 +437,52 @@ async function waitForPage(type) {
     return timeout == 0
 }
 
+async function waitForVerification() {
+    let timeout = 0
+
+    while (true) {
+        timeout++
+        await delay(1000)
+        try {
+            let url = await page.url()
+            if (url.startsWith('https://accounts.google.com/signup/v2/addrecoveryemail')) {
+                let data = await exists('#recoveryEmailId')
+                if (data) {
+                    timeout = 1
+                    break
+                }
+            } else if (url.startsWith('https://accounts.google.com/addrecoveryphone')) {
+                let data = await exists('#phoneNumberId')
+                if (data) {
+                    timeout = 2
+                    break
+                }
+            } else if (url.startsWith('https://accounts.google.com/signup/v2/confirmation')) {
+                let data = await exists('div[class="wLBAL"]')
+                if (data) {
+                    timeout = 3
+                    break
+                }
+            } else if (url.startsWith('https://accounts.google.com/signup/v2/idvbyphone')) {
+                let data = await exists('#phoneNumberId')
+                if (data) {
+                    timeout = 4
+                    break
+                }
+            }
+        } catch (error) {}
+
+        if (timeout >= 30) {
+            timeout = 0
+            break
+        }
+    }
+
+    await delay(1000)
+
+    return timeout
+}
+
 async function waitForUser() {
     let timeout = 0
 
@@ -439,7 +490,7 @@ async function waitForUser() {
         timeout++
         await delay(1000)
         let url = await page.url()
-        if (url.startsWith('https://accounts.google.com/createpassword')) {
+        if (url.startsWith('https://accounts.google.com/signup/v2/createpassword')) {
             let data = await exists('input[name="Passwd"]')
             if (data) {
                 timeout = 0
