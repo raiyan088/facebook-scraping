@@ -273,6 +273,7 @@ async function createAccount() {
                                 if (success) {
                                     await delay(500)
                                     await page.click(next)
+                                    await errorCapture()
                                     success = await waitForPage(7)
                                     if (success) {
                                         await delay(1000)
@@ -340,6 +341,7 @@ async function createAccount() {
 
 async function errorHandling() {
     try {
+        await errorCapture()
         mError++
 
         if (mError > 3 || (NUMBER && mGmail.length == 0)) {
