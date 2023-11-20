@@ -273,7 +273,8 @@ async function createAccount() {
                                 if (success) {
                                     await delay(500)
                                     await page.click(next)
-                                    await errorCapture()
+                                    await delay(1000)
+                                    await dialogConfirm()
                                     success = await waitForPage(7)
                                     if (success) {
                                         await delay(1000)
@@ -605,6 +606,13 @@ async function waitForSkip() {
             }
         } catch (error) {}
     })
+}
+
+async function dialogConfirm() {
+    let data = await exists('div[class="XfpsVe J9fJmf"]')
+    if (data) {
+        await page.click('div[class="XfpsVe J9fJmf"] > div[data-id="ssJRIf"]')
+    }
 }
 
 async function exists(evement) {
