@@ -208,134 +208,125 @@ async function createAccount() {
     map['recovery'] = recovery+'@'+mDomain+'.com'
     map['create'] = parseInt(new Date().getTime()/1000)
 
-    await page.goto('https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Fmyaccount.google.com%2Fphone&ec=GAZAmgQ&hl=en&ifkv=ASKXGp02anCczX2e5_7sfzXwUPu4IbDzTsjz1kF6WcVuBBlFeYMf3YScdRLQ75mnJe7gAZV8D1CC&passive=true&flowName=GlifWebSignIn&flowEntry=ServiceLogin&dsh=S218642338%3A1700425853047256&theme=glif', { waitUntil: 'load', timeout: 0 })
-    await delay(1000)
-    await page.click('button[class="VfPpkd-LgbsSe VfPpkd-LgbsSe-OWXEXe-dgl2Hf ksBjEc lKxP2d LQeN7 FliLIb uRo0Xe TrZEUc Xf9GD"]')
-    await delay(1000)
-    await page.click('ul[class="VfPpkd-StrnGf-rymPhb DMZ54e"] > li')
-    let success = await waitForPage(0)
+    await page.goto('https://accounts.google.com/signup/v2/createaccount?continue=https%3A%2F%2Fmyaccount.google.com%2Fphone&theme=glif&flowName=GlifWebSignIn&flowEntry=SignUp', { waitUntil: 'load', timeout: 0 })
+    await delay(500)
+    await page.type('#firstName', name[0])
+    await delay(500)
+    await page.type('#lastName', name[1])
+    await delay(500)
+    await page.click('#collectNameNext')
+    let success = await waitForPage(1)
     if (success) {
-        await page.type('#firstName', name[0])
+        let year = getRandomYear()
+        let month = getRandomMonth()
+        let day = getRandomDay()
+        let next = 'button[class="VfPpkd-LgbsSe VfPpkd-LgbsSe-OWXEXe-k8QpJ VfPpkd-LgbsSe-OWXEXe-dgl2Hf nCP5yc AjY5Oe DuMIQc LQeN7 qIypjc TrZEUc lw1w4b"]'
+        let input = 'input[class="whsOnd zHQkBf"]'
+        await delay(1000)
+        await page.select('#month', month)
         await delay(500)
-        await page.type('#lastName', name[1])
+        await page.type('#day', day)
         await delay(500)
-        await page.click('#collectNameNext')
-        let success = await waitForPage(1)
+        await page.type('#year', year)
+        await delay(500)
+        await page.select('#gender', '1')
+        await delay(500)
+        await page.click(next)
+        success = await waitForPage(2)
         if (success) {
-            let year = getRandomYear()
-            let month = getRandomMonth()
-            let day = getRandomDay()
-            let next = 'button[class="VfPpkd-LgbsSe VfPpkd-LgbsSe-OWXEXe-k8QpJ VfPpkd-LgbsSe-OWXEXe-dgl2Hf nCP5yc AjY5Oe DuMIQc LQeN7 qIypjc TrZEUc lw1w4b"]'
-            let input = 'input[class="whsOnd zHQkBf"]'
-            await delay(1000)
-            await page.select('#month', month)
-            await delay(500)
-            await page.type('#day', day)
-            await delay(500)
-            await page.type('#year', year)
-            await delay(500)
-            await page.select('#gender', '1')
+            let custom = await exists('div[data-value="custom"]')
+            if (custom) {
+                await page.click('div[data-value="custom"]')
+                await delay(500)
+            }
+            await page.type(input, USER)
             await delay(500)
             await page.click(next)
-            success = await waitForPage(2)
+            success = await waitForUser()
             if (success) {
-                let custom = await exists('div[data-value="custom"]')
-                if (custom) {
-                    await page.click('div[data-value="custom"]')
-                    await delay(500)
-                }
-                await page.type(input, USER)
+                await page.type('input[name="Passwd"]', map['password'])
+                await delay(500)
+                await page.type('input[name="PasswdAgain"]', map['password'])
                 await delay(500)
                 await page.click(next)
-                success = await waitForUser()
+                success = await waitForPage(3)
                 if (success) {
-                    await page.type('input[name="Passwd"]', map['password'])
+                    let button = 'button[class="VfPpkd-LgbsSe VfPpkd-LgbsSe-OWXEXe-INsAgc VfPpkd-LgbsSe-OWXEXe-dgl2Hf Rj2Mlf OLiIxf PDpWxe P62QJc LQeN7 xYnMae TrZEUc lw1w4b"]'
                     await delay(500)
-                    await page.type('input[name="PasswdAgain"]', map['password'])
+                    await page.type('#recoveryEmailId', map['recovery'])
                     await delay(500)
-                    await page.click(next)
-                    success = await waitForPage(3)
+                    await page.click(button)
+                    success = await waitForPage(4)
                     if (success) {
-                        let button = 'button[class="VfPpkd-LgbsSe VfPpkd-LgbsSe-OWXEXe-INsAgc VfPpkd-LgbsSe-OWXEXe-dgl2Hf Rj2Mlf OLiIxf PDpWxe P62QJc LQeN7 xYnMae TrZEUc lw1w4b"]'
                         await delay(500)
-                        await page.type('#recoveryEmailId', map['recovery'])
-                        await delay(500)
-                        await page.click(button)
-                        success = await waitForPage(4)
+                        await waitForSkip()
+                        success = await waitForPage(5)
                         if (success) {
-                            await delay(500)
-                            await waitForSkip()
-                            success = await waitForPage(5)
+                            await page.click(next)
+                            await page.waitForNavigation({ waitUntil: ['load'] })
+                            success = await waitForPage(6)
                             if (success) {
+                                await delay(500)
                                 await page.click(next)
-                                await page.waitForNavigation({ waitUntil: ['load'] })
-                                success = await waitForPage(6)
+                                await delay(1000)
+                                await dialogConfirm()
+                                success = await waitForPage(7)
                                 if (success) {
-                                    await delay(500)
-                                    await page.click(next)
                                     await delay(1000)
-                                    await dialogConfirm()
-                                    success = await waitForPage(7)
-                                    if (success) {
-                                        await delay(1000)
-                                        await page.goto('https://myaccount.google.com/phone', { waitUntil: 'load', timeout: 0 })
-                                        await saveData(USER, map)
-                                        await delay(1000)
-                                        await page.close()
-                                        await delay(1000)
+                                    await page.goto('https://myaccount.google.com/phone', { waitUntil: 'load', timeout: 0 })
+                                    await saveData(USER, map)
+                                    await delay(1000)
+                                    await page.close()
+                                    await delay(1000)
 
-                                        mStart = new Date().getTime()+30000
+                                    mStart = new Date().getTime()+30000
 
-                                        console.log('|*|--END: '+getAccountSize(0)+'--')
-                                        console.log('|*|---'+getStringTime()+'---')
+                                    console.log('|*|--END: '+getAccountSize(0)+'--')
+                                    console.log('|*|---'+getStringTime()+'---')
 
-                                        mError = 0
-                                        
-                                        try {
-                                            if (mAddAccount < 10) {
-                                                browserStart()
-                                            } else {
-                                                console.log('|*|-IP CHANGE-')
-                                                process.exit(0)
-                                            }
-                                        } catch (error) {
-                                            console.log('|*|---ERROR---')
+                                    mError = 0
+                                    
+                                    try {
+                                        if (mAddAccount < 10) {
+                                            browserStart()
+                                        } else {
+                                            console.log('|*|-IP CHANGE-')
                                             process.exit(0)
                                         }
-                                    } else {
-                                        console.log('|*|-TIMEOUT:9-')
-                                        await errorHandling()
+                                    } catch (error) {
+                                        console.log('|*|---ERROR---')
+                                        process.exit(0)
                                     }
                                 } else {
-                                    console.log('|*|-TIMEOUT:8-')
+                                    console.log('|*|-TIMEOUT:9-')
                                     await errorHandling()
                                 }
                             } else {
-                                console.log('|*|-TIMEOUT:7-')
+                                console.log('|*|-TIMEOUT:8-')
                                 await errorHandling()
                             }
                         } else {
-                            console.log('|*|-TIMEOUT:6-')
+                            console.log('|*|-TIMEOUT:7-')
                             await errorHandling()
                         }
                     } else {
-                        console.log('|*|-TIMEOUT:5-')
+                        console.log('|*|-TIMEOUT:6-')
                         await errorHandling()
                     }
                 } else {
-                    console.log('|*|-TIMEOUT:4-')
+                    console.log('|*|-TIMEOUT:5-')
                     await errorHandling()
                 }
             } else {
-                console.log('|*|-TIMEOUT:3-')
+                console.log('|*|-TIMEOUT:4-')
                 await errorHandling()
             }
         } else {
-            console.log('|*|-TIMEOUT:2-')
+            console.log('|*|-TIMEOUT:3-')
             await errorHandling()
         }
     } else {
-        console.log('|*|-TIMEOUT:1-')
+        console.log('|*|-TIMEOUT:2-')
         await errorHandling()
     }
 }
@@ -384,7 +375,7 @@ async function waitForPage(type) {
                 timeout = 0
                 break
             }
-        } else if (type == 1 && url.startsWith('https://accounts.google.com/lifecycle/steps/signup/birthdaygender')) {
+        } else if (type == 1 && url.startsWith('https://accounts.google.com/lifecycle/steps/signup/birthdaygender') || url.startsWith('https://accounts.google.com/signup/v2/birthdaygender')) {
             let data = await exists('#gender')
             if (data) {
                 timeout = 0
