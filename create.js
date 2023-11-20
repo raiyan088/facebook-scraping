@@ -8,7 +8,6 @@ let NUMBER = false
 let FIVE_NUMBER_FIRST = false
 let mDomain = 'outlook'
 //let mDomain = 'yahoo'
-let NAME = 'english'
 
 
 let mName = []
@@ -18,10 +17,6 @@ let mRecovery = []
 let mGmail = []
 let IP = null
 let mError = 0
-let mUserError = 0
-let TL = null
-let azt = null
-let deviceinfo = null
 let USER = null
 let BYPASS = true
 let SERVER = 'regular'
@@ -191,14 +186,13 @@ async function createAccount() {
         mName = await getNameList()
     }
 
-    USER = await getUserName(mName[0].toLowerCase().replace(/[^a-z]/g, ''), getRandomNumber(2,4), true)
+    USER = await getUserName(mName[0].toLowerCase().replace(/[^a-z]/g, ''), getRandomNumber(4,7), true)
     if (NUMBER) {
         USER = mGmail[0].replace('@gmail.com', '').toString()
     } else if (FIVE_NUMBER_FIRST) {
         USER = await getUserName(mName[0].toLowerCase().replace(/[^a-z]/g, ''), getRandomNumber(5,5), false)
     }
 
-    mUserError = 0
     BYPASS = true
 
     let recovery = mRecovery[Math.floor((Math.random() * mRecovery.length))]
@@ -499,16 +493,13 @@ async function waitForUser() {
                         break
                     }
                 } else {
-                    mUserError++
-                    if (mUserError > 3) {
-                        mUserError = 3
-                    }
-                    
                     if (FIVE_NUMBER_FIRST) {
                         USER = await getUserName(mName[0].toLowerCase().replace(/[^a-z]/g, ''), getRandomNumber(5,5), false)
                     } else {
-                        USER = await getUserName(mName[0].toLowerCase().replace(/[^a-z]/g, ''), getRandomNumber(2+mUserError,4+mUserError), true)
+                        USER = await getUserName(mName[0].toLowerCase().replace(/[^a-z]/g, ''), getRandomNumber(4,7), true)
                     }
+
+                    console.log(USER)
 
                     mStart = new Date().getTime()+80000
                     await page.focus(input)
@@ -724,7 +715,7 @@ async function getNameList() {
         return output
     }
 
-    let response = await getAxios(BASE_URL+'name/'+NAME+'.json?orderBy=%22list%22&limitToLast=20&print=pretty')
+    let response = await getAxios(BASE_URL+'name/english.json?orderBy=%22list%22&limitToLast=20&print=pretty')
 
     try {
         let list = []
@@ -733,7 +724,7 @@ async function getNameList() {
         }
         let name =  list[Math.floor((Math.random() * list.length))]
         try {
-            await axios.delete(BASE_URL+'name/'+NAME+'/'+name+'.json')
+            await axios.delete(BASE_URL+'name/english/'+name+'.json')
         } catch (error) {}
 
         output = response.data[name]['list']
