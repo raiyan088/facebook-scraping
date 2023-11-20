@@ -511,6 +511,8 @@ async function waitForUser() {
                     await page.keyboard.type(USER)
                     await delay(500)
                     await page.click(next)
+                    await errorCapture()
+                    await delay(2000)
                 }
             }
         }
