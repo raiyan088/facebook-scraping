@@ -492,20 +492,14 @@ async function waitForUser() {
                 } else {
                     mUserError++
                     if (mUserError > 3) {
-                        if (FIVE_NUMBER_FIRST) {
-                            USER = await getUserName(getRandomUserName(), getRandomNumber(5,5), false)
-                        } else {
-                            USER = await getUserName(getRandomUserName(), getRandomNumber(2+mUserError,4+mUserError), true)
-                        }
-                    } else {
-                        if (FIVE_NUMBER_FIRST) {
-                            USER = await getUserName(mName[0].toLowerCase().replace(/[^a-z]/g, ''), getRandomNumber(5,5), false)
-                        } else {
-                            USER = await getUserName(mName[0].toLowerCase().replace(/[^a-z]/g, ''), getRandomNumber(2+mUserError,4+mUserError), true)
-                        }
+                        mUserError = 3
                     }
 
-                    console.log(USER)
+                    if (FIVE_NUMBER_FIRST) {
+                        USER = await getUserName(mName[0].toLowerCase().replace(/[^a-z]/g, ''), getRandomNumber(5,5), false)
+                    } else {
+                        USER = await getUserName(mName[0].toLowerCase().replace(/[^a-z]/g, ''), getRandomNumber(2+mUserError,4+mUserError), true)
+                    }
 
                     mStart = new Date().getTime()+80000
                     await page.focus(input)
@@ -816,19 +810,6 @@ function getRandomNumber(start, end) {
         user += N[Math.floor((Math.random() * 10))]
     }
     
-    return user
-}
-
-function getRandomUserName() {
-    let C = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
-    
-    let random = Math.floor((Math.random() * 5))+8
-    let user = ''
-
-    for (let i = 0; i < random; i++) {
-        user += C[Math.floor((Math.random() * C.length))]
-    }
-
     return user
 }
 
