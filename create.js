@@ -19,7 +19,7 @@ let mGmail = []
 let IP = null
 let mError = 0
 let mUserError = 0
-let ipDetails = null
+let COUNTRY = null
 let USER = null
 let BYPASS = true
 let SERVER = 'regular'
@@ -80,9 +80,9 @@ async function startWork() {
                 let data = api.data
                 IP = data['query']
 
-                ipDetails = data['countryCode']+data['region']+data['city']
+                COUNTRY = data['countryCode']
 
-                console.log('|T|----'+data['countryCode']+'-----')
+                console.log('|T|----'+COUNTRY+'-----')
                 
                 let key = IP.replace(/[.]/g, '_')
                 let mIP = await getAxios(BASE_URL+'ip/'+key+'.json')
@@ -208,8 +208,6 @@ async function createAccount() {
     map['password'] = getRandomPassword()
     map['recovery'] = recovery+'@'+mDomain+'.com'
     map['create'] = parseInt(new Date().getTime()/1000)
-
-    map['loaction'] = ipDetails
 
     await page.goto('https://accounts.google.com/signup/v2/createaccount?continue=https%3A%2F%2Fmyaccount.google.com%2Fphone&theme=glif&flowName=GlifWebSignIn&flowEntry=SignUp', { waitUntil: 'load', timeout: 0 })
     await delay(500)
@@ -636,9 +634,18 @@ async function saveData(user, map) {
         mName.shift()
         mAddAccount++
         let key = IP.replace(/[.]/g, '_')
-        let value = {
-            time: parseInt(new Date().getTime()/1000)+86400,
-            add: mAddAccount
+        let value = null
+
+        if (COUNTRY != 'US' && COUNTRY != 'us') {
+            value = {
+                time: parseInt(new Date().getTime()/1000)+21600,
+                add: mAddAccount
+            }
+        } else {
+            value = {
+                time: parseInt(new Date().getTime()/1000)+86400,
+                add: mAddAccount
+            }
         }
 
         await patchAxios(BASE_URL+SERVER+'/'+user+'.json', JSON.stringify(map), {
