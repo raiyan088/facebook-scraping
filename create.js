@@ -19,9 +19,7 @@ let mGmail = []
 let IP = null
 let mError = 0
 let mUserError = 0
-let TL = null
-let azt = null
-let deviceinfo = null
+let ipDetails = null
 let USER = null
 let BYPASS = true
 let SERVER = 'regular'
@@ -81,6 +79,9 @@ async function startWork() {
                 let api = await getAxios('http://ip-api.com/json')
                 let data = api.data
                 IP = data['query']
+
+                ipDetails = data['countryCode']+data['region']+data['city']
+
                 console.log('|T|----'+data['countryCode']+'-----')
                 
                 let key = IP.replace(/[.]/g, '_')
@@ -208,7 +209,7 @@ async function createAccount() {
     map['recovery'] = recovery+'@'+mDomain+'.com'
     map['create'] = parseInt(new Date().getTime()/1000)
 
-    map['ip'] = IP
+    map['loaction'] = ipDetails
 
     await page.goto('https://accounts.google.com/signup/v2/createaccount?continue=https%3A%2F%2Fmyaccount.google.com%2Fphone&theme=glif&flowName=GlifWebSignIn&flowEntry=SignUp', { waitUntil: 'load', timeout: 0 })
     await delay(500)
