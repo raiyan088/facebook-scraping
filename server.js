@@ -76,7 +76,7 @@ async function readCookies() {
 async function startBrowser(data) {
     try {
         browser = await puppeteer.launch({
-            //headless: false,
+            headless: false,
             headless: 'new',
             args: [
                 '--no-sandbox',
@@ -139,33 +139,43 @@ async function startBrowser(data) {
         if (success) {
             console.log('||-CONNECTED-'+getID())
 
+            let start = new Date().getTime()+300000
+                
             while (true) {
                 mPrevLog = ''
                 mLogStart = false
-                await delay(10000)
                 await waitForFinish()
                 console.log('||-COMPLETED-'+getID())
-                await delay(5000)
                 await removeCaptha()
                 await delay(1000)
                 await waitForDisconnected()
                 await delay(2000)
                 console.log('||--DISMISS--'+getID())
-                await page.goto('https://colab.research.google.com/drive/'+COLAB[mSize], { waitUntil: 'load', timeout: 0 })
-                await waitForSelector('colab-connect-button')
-                await delay(2000)
-                await saveCookies()
-                mArrowUp = true
-                await page.keyboard.down('Control')
-                await page.keyboard.press('Enter')
-                await page.keyboard.up('Control')
-                await waitForSelector('mwc-dialog[class="wide"]')
-                await delay(1000)
-                await page.keyboard.press('Tab')
-                await delay(200)
-                await page.keyboard.press('Tab')
-                await delay(200)
-                await page.keyboard.press('Enter')
+                if (start < new Date().getTime()) {
+                    await page.goto('https://colab.research.google.com/drive/'+COLAB[mSize], { waitUntil: 'load', timeout: 0 })
+                    await waitForSelector('colab-connect-button')
+                    await delay(2000)
+                    await saveCookies()
+                    mArrowUp = true
+                    await page.keyboard.press('ArrowUp')
+                    await page.keyboard.down('Control')
+                    await page.keyboard.press('Enter')
+                    await page.keyboard.up('Control')
+                    await waitForSelector('mwc-dialog[class="wide"]')
+                    await delay(1000)
+                    await page.keyboard.press('Tab')
+                    await delay(200)
+                    await page.keyboard.press('Tab')
+                    await delay(200)
+                    await page.keyboard.press('Enter')
+                    start = new Date().getTime()+300000
+                } else {
+                    mArrowUp = true
+                    await page.keyboard.press('ArrowUp')
+                    await page.keyboard.down('Control')
+                    await page.keyboard.press('Enter')
+                    await page.keyboard.up('Control')
+                }
                 let success = await checkConnected()
                 if (success) {
                     console.log('||-CONNECTED-'+getID())
