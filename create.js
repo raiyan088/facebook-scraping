@@ -6,6 +6,9 @@ const fs = require('fs')
 
 let NUMBER = false
 let FIVE_NUMBER_FIRST = false
+let TARGET = 30
+
+
 let mDomain = 'outlook'
 //let mDomain = 'yahoo'
 let NAME = 'english'
@@ -46,7 +49,7 @@ setInterval(async() => {
 
             mStart = new Date().getTime()+30000
             
-            if (mAddAccount < 10) {
+            if (mAddAccount < TARGET) {
                 browserStart()
             } else {
                 console.log('|*|-IP CHANGE-')
@@ -97,7 +100,7 @@ async function startWork() {
                     mAddAccount = 0
                 }
 
-                if (mAddAccount < 10) {
+                if (mAddAccount < TARGET) {
                     browserStart()
                 } else {
                     console.log('|*|-IP CHANGE-')
@@ -288,7 +291,7 @@ async function createAccount() {
                                     mError = 0
                                     
                                     try {
-                                        if (mAddAccount < 10) {
+                                        if (mAddAccount < TARGET) {
                                             browserStart()
                                         } else {
                                             console.log('|*|-IP CHANGE-')
@@ -350,7 +353,7 @@ async function errorHandling() {
                 mGmail.shift()
             }
     
-            if (mAddAccount < 10) {
+            if (mAddAccount < TARGET) {
                 browserStart()
             } else {
                 console.log('|*|-IP CHANGE-')
