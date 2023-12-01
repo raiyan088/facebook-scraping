@@ -224,7 +224,11 @@ async function logInGmail(data) {
                 await page.click('div[data-challengetype="12"]')
                 status = await waitForLoginSuccess(true)
                 if (status == 5) {
-                    await page.type('#knowledge-preregistered-email-response', data['recovery']+'@gmail.com')
+                    let recovery = data['recovery']
+                    if (!recovery.endsWith('.com')) {
+                        recovery += '@gmail.com'
+                    }
+                    await page.type('#knowledge-preregistered-email-response', recovery)
                     await delay(500)
                     await page.click('button[class="VfPpkd-LgbsSe VfPpkd-LgbsSe-OWXEXe-k8QpJ VfPpkd-LgbsSe-OWXEXe-dgl2Hf nCP5yc AjY5Oe DuMIQc LQeN7 qIypjc TrZEUc lw1w4b"]')
                     await delay(2000)
