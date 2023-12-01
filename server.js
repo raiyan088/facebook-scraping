@@ -300,9 +300,14 @@ async function waitForLoginStatus() {
 
 async function waitForLoginSuccess(selection) {
     let status = 0
-
+    let timeout = 0
+    
     while (true) {
-
+        timeout++
+        if (timeout >= 50) {
+            status = 0
+            break
+        }
         await delay(2000)
 
         try {
