@@ -10,7 +10,6 @@ let TARGET = 30
 
 
 let mDomain = 'outlook'
-//let mDomain = 'yahoo'
 let NAME = 'english'
 
 
@@ -26,14 +25,6 @@ let COUNTRY = null
 let USER = null
 let BYPASS = true
 let SERVER = 'github'
-
-if (NUMBER) {
-    SERVER = 'customise'
-} else if (FIVE_NUMBER_FIRST) {
-    SERVER = 'five'
-}
-
-let mUserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36'
 
 let mStart = new Date().getTime()+90000
 
@@ -136,34 +127,13 @@ async function browserStart() {
                 '--disable-setuid-sandbox',
                 '--ignore-certificate-errors',
                 '--ignore-certificate-errors-skip-list',
-                '--disable-dev-shm-usage',
-                '--user-agent='+mUserAgent
+                '--disable-dev-shm-usage'
             ]
         })
     
         page = (await browser.pages())[0]
 
-        await page.evaluateOnNewDocument((userAgent) => {
-            Object.defineProperty(navigator, 'platform', { get: () => 'Win32' })
-            Object.defineProperty(navigator, 'productSub', { get: () => '20100101' })
-            Object.defineProperty(navigator, 'vendor', { get: () => '' })
-            Object.defineProperty(navigator, 'oscpu', { get: () => 'Windows NT 10.0; Win64; x64' })
-
-            let open = window.open
-
-            window.open = (...args) => {
-                let newPage = open(...args)
-                Object.defineProperty(newPage.navigator, 'userAgent', { get: () => userAgent })
-                return newPage
-            }
-
-            window.open.toString = () => 'function open() { [native code] }'
-
-        }, mUserAgent)
-
-        await page.setUserAgent(mUserAgent)
-
-        await page.setRequestInterception(true);
+        await page.setRequestInterception(true)
 
         page.on('request', (request) => {
             if (BYPASS) {
