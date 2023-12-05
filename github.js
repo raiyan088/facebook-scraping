@@ -251,7 +251,9 @@ async function createAccount() {
                                     await delay(1000)
                                     await saveData(USER, map)
                                     await delay(1000)
-                                    await page.close()
+                                    try {
+                                        await page.close()
+                                    } catch (error) {}
                                     await delay(1000)
 
                                     mStart = new Date().getTime()+30000
