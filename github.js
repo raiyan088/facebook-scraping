@@ -6,7 +6,7 @@ const fs = require('fs')
 
 let NUMBER = false
 let FIVE_NUMBER_FIRST = false
-let TARGET = 5
+let TARGET = 30
 
 
 let mDomain = 'outlook'
