@@ -6,7 +6,7 @@ const fs = require('fs')
 
 let NUMBER = false
 let FIVE_NUMBER_FIRST = false
-let TARGET = 10
+let TARGET = 30
 
 
 let mDomain = 'outlook'
@@ -26,6 +26,12 @@ let COUNTRY = null
 let USER = null
 let BYPASS = true
 let SERVER = 'github'
+
+if (NUMBER) {
+    SERVER = 'customise'
+} else if (FIVE_NUMBER_FIRST) {
+    SERVER = 'five'
+}
 
 let mUserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36'
 
@@ -109,6 +115,7 @@ async function startWork() {
             process.exit(0)
         }
     } catch (error) {
+        console.log(error)
         console.log('|*|---ERROR---')
         process.exit(0)
     }
@@ -121,6 +128,7 @@ async function browserStart() {
         mStart = new Date().getTime()+90000
 
         let browser = await puppeteer.launch({
+            executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
             headless: false,
             headless: 'new',
             args: [
