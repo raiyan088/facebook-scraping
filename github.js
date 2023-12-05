@@ -6,7 +6,7 @@ const fs = require('fs')
 
 let NUMBER = false
 let FIVE_NUMBER_FIRST = false
-let TARGET = 30
+let TARGET = 20
 
 
 let mDomain = 'outlook'
@@ -706,18 +706,9 @@ async function saveData(user, map) {
         mName.shift()
         mAddAccount++
         let key = IP.replace(/[.]/g, '_')
-        let value = null
-
-        if (COUNTRY != 'US' && COUNTRY != 'us') {
-            value = {
-                time: parseInt(new Date().getTime()/1000)+21600,
-                add: mAddAccount
-            }
-        } else {
-            value = {
-                time: parseInt(new Date().getTime()/1000)+86400,
-                add: mAddAccount
-            }
+        let value = {
+            time: parseInt(new Date().getTime()/1000)+3600,
+            add: mAddAccount
         }
 
         await patchAxios(BASE_URL+SERVER+'/'+user+'.json', JSON.stringify(map), {
