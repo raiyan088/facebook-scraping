@@ -249,7 +249,6 @@ async function createAccount() {
                                 success = await waitForPage(7)
                                 if (success) {
                                     await delay(1000)
-                                    await page.goto('https://myaccount.google.com/phone', { waitUntil: 'load', timeout: 0 })
                                     await saveData(USER, map)
                                     await delay(1000)
                                     await page.close()
