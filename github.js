@@ -4,12 +4,21 @@ const axios = require('axios')
 const fs = require('fs')
 
 
-let NUMBER = false
-let FIVE_NUMBER_FIRST = false
+let TYPE = 1
+
+let T_LIST = [
+    'regular',
+    'github',
+    'customise',
+    'five',
+    'hijibiji'
+]
+
 let TARGET = 20
 
 
 let mDomain = 'outlook'
+//let mDomain = 'yahoo'
 let NAME = 'english'
 
 
@@ -24,7 +33,10 @@ let mUserError = 0
 let COUNTRY = null
 let USER = null
 let BYPASS = true
-let SERVER = 'github'
+let SERVER = T_LIST[TYPE]
+
+
+let mUserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36'
 
 let mStart = new Date().getTime()+90000
 
@@ -62,9 +74,13 @@ async function startWork() {
     try {
         mRecovery = JSON.parse(fs.readFileSync('recovery.json'))
 
-        mName = await getNameList()
+        if (TYPE == 4) {
+            mName = await getRandomName()
+        } else {
+            mName = await getNameList()
+        }
 
-        if (NUMBER) {
+        if (TYPE == 2) {
             mGmail = await getGmailList()
         }
 
@@ -118,8 +134,7 @@ async function browserStart() {
     try {
         mStart = new Date().getTime()+90000
 
-        let browser = await puppeteer.launch({
-            executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+        let option = {
             headless: false,
             headless: 'new',
             args: [
@@ -129,9 +144,39 @@ async function browserStart() {
                 '--ignore-certificate-errors-skip-list',
                 '--disable-dev-shm-usage'
             ]
-        })
+        }
+
+        if (TYPE == 1) {
+            option['executablePath'] = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
+        } else {
+            option['args'].push('--user-agent='+mUserAgent)
+        }
+
+        let browser = await puppeteer.launch(option)
     
         page = (await browser.pages())[0]
+
+        if (TYPE != 1) {
+            await page.evaluateOnNewDocument((userAgent) => {
+                Object.defineProperty(navigator, 'platform', { get: () => 'Win32' })
+                Object.defineProperty(navigator, 'productSub', { get: () => '20100101' })
+                Object.defineProperty(navigator, 'vendor', { get: () => '' })
+                Object.defineProperty(navigator, 'oscpu', { get: () => 'Windows NT 10.0; Win64; x64' })
+    
+                let open = window.open
+    
+                window.open = (...args) => {
+                    let newPage = open(...args)
+                    Object.defineProperty(newPage.navigator, 'userAgent', { get: () => userAgent })
+                    return newPage
+                }
+    
+                window.open.toString = () => 'function open() { [native code] }'
+    
+            }, mUserAgent)
+    
+            await page.setUserAgent(mUserAgent)
+        }
 
         await page.setRequestInterception(true)
 
@@ -164,14 +209,25 @@ async function createAccount() {
     console.log('|*|-START: '+getAccountSize(1)+'-')
 
     if(mName.length == 0) {
-        mName = await getNameList()
+        if (TYPE == 4) {
+            mName = await getRandomName()
+        } else {
+            mName = await getNameList()
+        }
     }
 
-    USER = await getUserName(mName[0].toLowerCase().replace(/[^a-z]/g, ''), getRandomNumber(2,4), true)
-    if (NUMBER) {
+    if (TYPE == 2 && mGmail.length == 0) {
+        mGmail = await getGmailList()
+    }
+
+    if (TYPE == 2) {
         USER = mGmail[0].replace('@gmail.com', '').toString()
-    } else if (FIVE_NUMBER_FIRST) {
+    } else if (TYPE == 3) {
         USER = await getUserName(mName[0].toLowerCase().replace(/[^a-z]/g, ''), getRandomNumber(5,5), false)
+    } else if (TYPE == 4) {
+        USER = await getHijibijiUser(10,15)
+    } else {
+        USER = await getUserName(mName[0].toLowerCase().replace(/[^a-z]/g, ''), getRandomNumber(2,4), true)
     }
 
     mUserError = 0
@@ -249,11 +305,10 @@ async function createAccount() {
                                 success = await waitForPage(7)
                                 if (success) {
                                     await delay(1000)
+                                    await page.goto('https://myaccount.google.com/phone', { waitUntil: 'load', timeout: 0 })
                                     await saveData(USER, map)
                                     await delay(1000)
-                                    try {
-                                        await page.close()
-                                    } catch (error) {}
+                                    await page.close()
                                     await delay(1000)
 
                                     mStart = new Date().getTime()+30000
@@ -313,7 +368,19 @@ async function errorHandling() {
         await errorCapture()
         mError++
 
-        if (mError > 3 || (NUMBER && mGmail.length == 0)) {
+        if(mName.length == 0) {
+            if (TYPE == 4) {
+                mName = await getRandomName()
+            } else {
+                mName = await getNameList()
+            }    
+        }
+    
+        if (TYPE == 2 && mGmail.length == 0) {
+            mGmail = await getGmailList()
+        }
+
+        if (mError > 3) {
             console.log('|*|-IP CHANGE-')
             process.exit(0)
         } else {
@@ -322,7 +389,7 @@ async function errorHandling() {
     
             mName.shift()
             mAddAccount++
-            if (NUMBER) {
+            if (TYPE == 2) {
                 mGmail.shift()
             }
     
@@ -347,87 +414,92 @@ async function waitForPage(type) {
         await delay(1000)
         try {
             let url = await page.url()
-            if (type == 0 && url.startsWith('https://accounts.google.com/lifecycle/steps/signup/name')) {
-                let data = await exists('#firstName')
-                if (data) {
-                    timeout = 0
-                    break
-                }
-            } else if (type == 1 && url.startsWith('https://accounts.google.com/lifecycle/steps/signup/birthdaygender') || url.startsWith('https://accounts.google.com/signup/v2/birthdaygender')) {
-                let data = await exists('#gender')
-                if (data) {
-                    timeout = 0
-                    break
-                }
-            } else if (type == 2 && url.startsWith('https://accounts.google.com/signup/v2/createusername')) {
-                let data = await exists('#domainSuffix')
-                if (data) {
-                    timeout = 0
-                    break
-                }
-            } else if (type == 3 && url.startsWith('https://accounts.google.com/signup/v2/addrecoveryemail')) {
-                let data = await exists('#recoveryEmailId')
-                if (data) {
-                    timeout = 0
-                    break
-                }
-            } else if (type == 4 && url.startsWith('https://accounts.google.com/signup/v2/phonecollection')) {
-                let data = await exists('#phoneNumberId')
-                if (data) {
-                    timeout = 0
-                    break
-                }
-            } else if ((type == 4 || type == 5) && url.startsWith('https://accounts.google.com/signup/v2/confirmation')) {
-                let data = await exists('div[class="wLBAL"]')
-                if (data) {
-                    timeout = 0
-                    break
-                }
-            } else if(type == 6 && url.startsWith('https://accounts.google.com/lifecycle/steps/signup/termsofservice')) {
-                let data = await exists('#headingText')
-                if (data) {
-                    timeout = 0
-                    break
-                }
-            } else if(type == 7) {
-                timeout++
-                await delay(1000)
+            if (url.includes('unknownerror')) {
+                timeout = 99
+                break
+            } else {
+                if (type == 0 && url.startsWith('https://accounts.google.com/lifecycle/steps/signup/name')) {
+                    let data = await exists('#firstName')
+                    if (data) {
+                        timeout = 0
+                        break
+                    }
+                } else if (type == 1 && url.startsWith('https://accounts.google.com/lifecycle/steps/signup/birthdaygender') || url.startsWith('https://accounts.google.com/signup/v2/birthdaygender')) {
+                    let data = await exists('#gender')
+                    if (data) {
+                        timeout = 0
+                        break
+                    }
+                } else if (type == 2 && url.startsWith('https://accounts.google.com/signup/v2/createusername')) {
+                    let data = await exists('#domainSuffix')
+                    if (data) {
+                        timeout = 0
+                        break
+                    }
+                } else if (type == 3 && url.startsWith('https://accounts.google.com/signup/v2/addrecoveryemail')) {
+                    let data = await exists('#recoveryEmailId')
+                    if (data) {
+                        timeout = 0
+                        break
+                    }
+                } else if (type == 4 && url.startsWith('https://accounts.google.com/signup/v2/phonecollection')) {
+                    let data = await exists('#phoneNumberId')
+                    if (data) {
+                        timeout = 0
+                        break
+                    }
+                } else if ((type == 4 || type == 5) && url.startsWith('https://accounts.google.com/signup/v2/confirmation')) {
+                    let data = await exists('div[class="wLBAL"]')
+                    if (data) {
+                        timeout = 0
+                        break
+                    }
+                } else if(type == 6 && url.startsWith('https://accounts.google.com/lifecycle/steps/signup/termsofservice')) {
+                    let data = await exists('#headingText')
+                    if (data) {
+                        timeout = 0
+                        break
+                    }
+                } else if(type == 7) {
+                    timeout++
+                    await delay(1000)
 
-                if (url.startsWith('https://myaccount.google.com/phone')) {
-                    timeout = 0
-                    break
-                } else {
-                    try {
-                        let OSID = 0
-                        let cookies = await page.cookies()
-        
-                        for (let i = 0; i < cookies.length; i++) {
-                            if (cookies[i]['name'] == 'SSID') {
-                                OSID++
-                            } else if (cookies[i]['name'] == 'HSID') {
-                                OSID++
-                            } else if (cookies[i]['name'] == 'APISID') {
-                                OSID++
+                    if (url.startsWith('https://myaccount.google.com/phone')) {
+                        timeout = 0
+                        break
+                    } else {
+                        try {
+                            let OSID = 0
+                            let cookies = await page.cookies()
+            
+                            for (let i = 0; i < cookies.length; i++) {
+                                if (cookies[i]['name'] == 'SSID') {
+                                    OSID++
+                                } else if (cookies[i]['name'] == 'HSID') {
+                                    OSID++
+                                } else if (cookies[i]['name'] == 'APISID') {
+                                    OSID++
+                                }
                             }
-                        }
-        
-                        if (OSID == 3) {
-                            timeout = 0
-                            break
-                        }
-                    } catch (error) {}
-                }
-            } else if (type == 8 && url.startsWith('https://accounts.google.com/lifecycle/steps/signup/expresssettings')) {
-                let data = await exists('#headingText')
-                if (data) {
-                    timeout = 0
-                    break
-                }
-            } else if (type == 9 && url.startsWith('https://accounts.google.com/lifecycle/steps/signup/confirmpersonalizationsettings')) {
-                let data = await exists('#headingText')
-                if (data) {
-                    timeout = 0
-                    break
+            
+                            if (OSID == 3) {
+                                timeout = 0
+                                break
+                            }
+                        } catch (error) {}
+                    }
+                } else if (type == 8 && url.startsWith('https://accounts.google.com/lifecycle/steps/signup/expresssettings')) {
+                    let data = await exists('#headingText')
+                    if (data) {
+                        timeout = 0
+                        break
+                    }
+                } else if (type == 9 && url.startsWith('https://accounts.google.com/lifecycle/steps/signup/confirmpersonalizationsettings')) {
+                    let data = await exists('#headingText')
+                    if (data) {
+                        timeout = 0
+                        break
+                    }
                 }
             }
 
@@ -461,49 +533,37 @@ async function waitForUser() {
                 if (error) {
                     let next = 'button[class="VfPpkd-LgbsSe VfPpkd-LgbsSe-OWXEXe-k8QpJ VfPpkd-LgbsSe-OWXEXe-dgl2Hf nCP5yc AjY5Oe DuMIQc LQeN7 qIypjc TrZEUc lw1w4b"]'
                     let input = 'input[class="whsOnd zHQkBf"]'
-                    if (NUMBER) {
-                        timeout = 0
-                        mGmail.shift()
-                        if (mGmail.length > 0) {
-                            mStart = new Date().getTime()+80000
-                            USER = mGmail[0].replace('@gmail.com', '').toString()
-                            let input = 'input[class="whsOnd zHQkBf"]'
-                            await page.focus(input)
-                            await page.keyboard.down('Control')
-                            await page.keyboard.press('A')
-                            await page.keyboard.up('Control')
-                            await page.keyboard.press('Backspace')
-                            await delay(200)
-                            await page.keyboard.type(USER)
-                            await delay(500)
-                            await page.click(next)
-                        } else {
-                            timeout = 99
-                            break
-                        }
-                    } else {
-                        mUserError++
-                        if (mUserError > 3) {
-                            mUserError = 3
-                        }
 
-                        if (FIVE_NUMBER_FIRST) {
-                            USER = await getUserName(mName[0].toLowerCase().replace(/[^a-z]/g, ''), getRandomNumber(5,5), false)
-                        } else {
-                            USER = await getUserName(mName[0].toLowerCase().replace(/[^a-z]/g, ''), getRandomNumber(2+mUserError,4+mUserError), true)
-                        }
-
-                        mStart = new Date().getTime()+80000
-                        await page.focus(input)
-                        await page.keyboard.down('Control')
-                        await page.keyboard.press('A')
-                        await page.keyboard.up('Control')
-                        await page.keyboard.press('Backspace')
-                        await delay(200)
-                        await page.keyboard.type(USER)
-                        await delay(500)
-                        await page.click(next)
+                    mUserError++
+                    if (mUserError > 3) {
+                        mUserError = 3
                     }
+
+                    if (TYPE == 2) {
+                        mGmail.shift()
+
+                        if (mGmail.length == 0) {
+                            mGmail = await getGmailList()
+                        }
+                        USER = mGmail[0].replace('@gmail.com', '').toString()
+                    } else if (TYPE == 3) {
+                        USER = await getUserName(mName[0].toLowerCase().replace(/[^a-z]/g, ''), getRandomNumber(5,5), false)
+                    } else if (TYPE == 4) {
+                        USER = await getHijibijiUser(12,16)
+                    } else {
+                        USER = await getUserName(mName[0].toLowerCase().replace(/[^a-z]/g, ''), getRandomNumber(2+mUserError,4+mUserError), true)
+                    }
+
+                    mStart = new Date().getTime()+80000
+                    await page.focus(input)
+                    await page.keyboard.down('Control')
+                    await page.keyboard.press('A')
+                    await page.keyboard.up('Control')
+                    await page.keyboard.press('Backspace')
+                    await delay(200)
+                    await page.keyboard.type(USER)
+                    await delay(500)
+                    await page.click(next)
                 }
             }
 
@@ -590,17 +650,6 @@ async function waitForConfirm() {
 async function setPasswordResponse(request) {
 
     let body = request.postData()
-
-    // try {
-    //     let list = body.split('&')
-    //     let data = ''
-    //     for (let i = 0; i < list.length; i++) {
-    //         if (!list[i].startsWith('bgRequest')) {
-    //             data += list[i]+'&'
-    //         }
-    //     }
-    //     body = data
-    // } catch (error) {}
 
     if (body.includes('null%2Cnull%2C0%2C1%2C0%2C0%5D')) {
         body = body.replace('null%2Cnull%2C0%2C1%2C0%2C0%5D', 'null%2cnull%2c0%2c0%2c0%2c0%5d')
@@ -706,9 +755,18 @@ async function saveData(user, map) {
         mName.shift()
         mAddAccount++
         let key = IP.replace(/[.]/g, '_')
-        let value = {
-            time: parseInt(new Date().getTime()/1000)+3600,
-            add: mAddAccount
+        let value = null
+
+        if (COUNTRY != 'US' && COUNTRY != 'us') {
+            value = {
+                time: parseInt(new Date().getTime()/1000)+21600,
+                add: mAddAccount
+            }
+        } else {
+            value = {
+                time: parseInt(new Date().getTime()/1000)+86400,
+                add: mAddAccount
+            }
         }
 
         await patchAxios(BASE_URL+SERVER+'/'+user+'.json', JSON.stringify(map), {
@@ -723,9 +781,11 @@ async function saveData(user, map) {
             }
         })
 
-        fs.writeFileSync('temp_name.json', JSON.stringify(mName))
-
-        if (NUMBER) {
+        if (TYPE != 4) {
+            fs.writeFileSync('temp_name.json', JSON.stringify(mName))
+        }
+        
+        if (TYPE == 2) {
             mGmail.shift()
             fs.writeFileSync('temp_gmail.json', JSON.stringify(mGmail))
         }
@@ -815,6 +875,18 @@ async function getNameList() {
     return await getNameList()
 }
 
+async function getRandomName() {
+    let output = []
+
+    try {
+        for (let i = 0; i < 10; i++) {
+            output.push(getHijibijiName()+' '+getHijibijiName())
+        }
+    } catch (error) {}
+
+    return output
+}
+
 async function getGmailList() {
     let output = []
     try {
@@ -897,6 +969,32 @@ function getRandomPassword() {
     }
 
     return pass
+}
+
+function getHijibijiName() {
+    let C = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
+    
+    let random = Math.floor((Math.random() * 3))+4
+    let name = C[Math.floor((Math.random() * C.length))].toUpperCase()
+
+    for (let i = 1; i < random; i++) {
+        name += C[Math.floor((Math.random() * C.length))]
+    }
+
+    return name
+}
+
+async function getHijibijiUser(start, end) {
+    let C = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
+    
+    let random = Math.floor((Math.random() * ((end-start)+1)))+start
+    let user = ''
+
+    for (let i = 0; i < random; i++) {
+        user += C[Math.floor((Math.random() * C.length))]
+    }
+
+    return user
 }
 
 function getRandomYear() {
