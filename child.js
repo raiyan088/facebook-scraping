@@ -1,10 +1,5 @@
+const prompt = require('prompt-sync')({sigint: true})
 
-console.log('Start')
+const num = prompt('Enter a number: ')
 
-process.argv.slice(2).forEach(function (data, index) {
-    try {
-        if (index == 0) {
-            console.log('Data: '+data)
-        }
-    } catch (error) {}
-})
+console.log('Result: '+num)
