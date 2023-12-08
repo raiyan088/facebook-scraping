@@ -612,16 +612,16 @@ async function setPasswordResponse(request) {
 
     let body = request.postData()
 
-    try {
-        let list = body.split('&')
-        let data = ''
-        for (let i = 0; i < list.length; i++) {
-            if (!list[i].startsWith('bgRequest')) {
-                data += list[i]+'&'
-            }
-        }
-        body = data
-    } catch (error) {}
+    // try {
+    //     let list = body.split('&')
+    //     let data = ''
+    //     for (let i = 0; i < list.length; i++) {
+    //         if (!list[i].startsWith('bgRequest')) {
+    //             data += list[i]+'&'
+    //         }
+    //     }
+    //     body = data
+    // } catch (error) {}
 
     if (body.includes('null%2Cnull%2C0%2C1%2C0%2C0%5D')) {
         body = body.replace('null%2Cnull%2C0%2C1%2C0%2C0%5D', 'null%2cnull%2c0%2c0%2c0%2c0%5d')
