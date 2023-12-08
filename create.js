@@ -6,7 +6,7 @@ const fs = require('fs')
 
 let NUMBER = false
 let FIVE_NUMBER_FIRST = false
-let TARGET = 10
+let TARGET = 30
 
 
 let mDomain = 'outlook'
@@ -142,11 +142,6 @@ async function browserStart() {
         page = (await browser.pages())[0]
 
         await page.evaluateOnNewDocument((userAgent) => {
-            Object.defineProperty(navigator, 'platform', { get: () => 'Win32' })
-            Object.defineProperty(navigator, 'productSub', { get: () => '20100101' })
-            Object.defineProperty(navigator, 'vendor', { get: () => '' })
-            Object.defineProperty(navigator, 'oscpu', { get: () => 'Windows NT 10.0; Win64; x64' })
-
             let open = window.open
 
             window.open = (...args) => {
@@ -156,12 +151,11 @@ async function browserStart() {
             }
 
             window.open.toString = () => 'function open() { [native code] }'
-
         }, mUserAgent)
 
         await page.setUserAgent(mUserAgent)
 
-        await page.setRequestInterception(true);
+        await page.setRequestInterception(true)
 
         page.on('request', (request) => {
             if (BYPASS) {
