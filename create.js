@@ -148,14 +148,14 @@ async function browserStart() {
         if (TYPE == 1) {
             option['executablePath'] = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
         } else {
-            //option['args'].push('--user-agent='+mUserAgent)
+            option['args'].push('--user-agent='+mUserAgent)
         }
 
         let browser = await puppeteer.launch(option)
     
         page = (await browser.pages())[0]
 
-        if (TYPE == 5) {
+        if (TYPE != 1) {
             await page.evaluateOnNewDocument((userAgent) => {
                 Object.defineProperty(navigator, 'platform', { get: () => 'Win32' })
                 Object.defineProperty(navigator, 'productSub', { get: () => '20100101' })
