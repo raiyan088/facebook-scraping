@@ -182,6 +182,23 @@ async function browserStart() {
         //     await page.setUserAgent(mUserAgent)
         // }
 
+        await page.setRequestInterception(true)
+
+        page.on('request', (request) => {
+            if (BYPASS) {
+                if (request.url().startsWith('https://accounts.google.com/_/signup/validatepassword')) {
+                    BYPASS = false
+                    setTimeout(async() => {
+                        await setPasswordResponse(request)
+                    }, 0)
+                } else {
+                    request.continue()
+                }
+            } else {
+                request.continue()
+            }
+        })
+
         page.on('dialog', async dialog => dialog.type() == "beforeunload" && dialog.accept())
 
         await createAccount()
@@ -228,11 +245,11 @@ async function createAccount() {
     map['create'] = parseInt(new Date().getTime()/1000)
 
     await page.goto('https://accounts.google.com/signup/v2/createaccount?continue=https%3A%2F%2Fmyaccount.google.com%2Fphone&theme=glif&flowName=GlifWebSignIn&flowEntry=SignUp&hl=en', { waitUntil: 'load', timeout: 0 })
-    await delay(200)
+    await delay(500)
     await page.type('#firstName', name[0])
     await delay(200)
     await page.type('#lastName', name[1])
-    await delay(200)
+    await delay(500)
     await page.click('#collectNameNext')
     let success = await waitForPage(1)
     if (success) {
@@ -241,7 +258,7 @@ async function createAccount() {
         let day = getRandomDay()
         let next = 'button[class="VfPpkd-LgbsSe VfPpkd-LgbsSe-OWXEXe-k8QpJ VfPpkd-LgbsSe-OWXEXe-dgl2Hf nCP5yc AjY5Oe DuMIQc LQeN7 qIypjc TrZEUc lw1w4b"]'
         let input = 'input[class="whsOnd zHQkBf"]'
-        await delay(200)
+        await delay(500)
         await page.select('#month', month)
         await delay(100)
         await page.type('#day', day)
@@ -249,7 +266,7 @@ async function createAccount() {
         await page.type('#year', year)
         await delay(100)
         await page.select('#gender', '1')
-        await delay(200)
+        await delay(500)
         await page.click(next)
         success = await waitForPage(2)
         if (success) {
@@ -259,14 +276,14 @@ async function createAccount() {
                 await delay(500)
             }
             await page.type(input, USER)
-            await delay(200)
+            await delay(500)
             await page.click(next)
             success = await waitForUser()
             if (success) {
                 await page.type('input[name="Passwd"]', map['password'])
-                await delay(200)
+                await delay(500)
                 await page.type('input[name="PasswdAgain"]', map['password'])
-                await delay(200)
+                await delay(500)
                 await page.click(next)
                 success = await waitForPage(3)
                 if (success) {
