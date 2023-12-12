@@ -14,8 +14,6 @@ let T_LIST = [
     'hijibiji'
 ]
 
-T_LIST[0] = 'bd'
-
 let TARGET = 20
 
 let DELAY = 2000
