@@ -14,7 +14,11 @@ let T_LIST = [
     'hijibiji'
 ]
 
+T_LIST[0] = 'bd'
+
 let TARGET = 20
+
+let DELAY = 2000
 
 
 let mDomain = 'outlook'
@@ -34,6 +38,7 @@ let COUNTRY = null
 let USER = null
 let BYPASS = true
 let SERVER = T_LIST[TYPE]
+let mSecontTry = true
 
 
 let mUserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36'
@@ -135,6 +140,7 @@ async function browserStart() {
         mStart = new Date().getTime()+90000
 
         let option = {
+            executablePath: '/usr/bin/google-chrome-stable',
             headless: false,
             headless: 'new',
             args: [
@@ -146,54 +152,37 @@ async function browserStart() {
             ]
         }
 
-        if (TYPE == 1) {
-            option['executablePath'] = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
-        } else {
-            option['args'].push('--user-agent='+mUserAgent)
-        }
+        // if (TYPE == 1) {
+        //     option['executablePath'] = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
+        // } else {
+        //     option['args'].push('--user-agent='+mUserAgent)
+        // }
 
         let browser = await puppeteer.launch(option)
     
         page = (await browser.pages())[0]
 
-        if (TYPE != 1) {
-            await page.evaluateOnNewDocument((userAgent) => {
-                Object.defineProperty(navigator, 'platform', { get: () => 'Win32' })
-                Object.defineProperty(navigator, 'productSub', { get: () => '20100101' })
-                Object.defineProperty(navigator, 'vendor', { get: () => '' })
-                Object.defineProperty(navigator, 'oscpu', { get: () => 'Windows NT 10.0; Win64; x64' })
+        // if (TYPE != 1) {
+        //     await page.evaluateOnNewDocument((userAgent) => {
+        //         Object.defineProperty(navigator, 'platform', { get: () => 'Win32' })
+        //         Object.defineProperty(navigator, 'productSub', { get: () => '20100101' })
+        //         Object.defineProperty(navigator, 'vendor', { get: () => '' })
+        //         Object.defineProperty(navigator, 'oscpu', { get: () => 'Windows NT 10.0; Win64; x64' })
     
-                let open = window.open
+        //         let open = window.open
     
-                window.open = (...args) => {
-                    let newPage = open(...args)
-                    Object.defineProperty(newPage.navigator, 'userAgent', { get: () => userAgent })
-                    return newPage
-                }
+        //         window.open = (...args) => {
+        //             let newPage = open(...args)
+        //             Object.defineProperty(newPage.navigator, 'userAgent', { get: () => userAgent })
+        //             return newPage
+        //         }
     
-                window.open.toString = () => 'function open() { [native code] }'
+        //         window.open.toString = () => 'function open() { [native code] }'
     
-            }, mUserAgent)
+        //     }, mUserAgent)
     
-            await page.setUserAgent(mUserAgent)
-        }
-
-        await page.setRequestInterception(true)
-
-        page.on('request', (request) => {
-            if (BYPASS) {
-                if (request.url().startsWith('https://accounts.google.com/_/signup/validatepassword')) {
-                    BYPASS = false
-                    setTimeout(async() => {
-                        await setPasswordResponse(request)
-                    }, 0)
-                } else {
-                    request.continue()
-                }
-            } else {
-                request.continue()
-            }
-        })
+        //     await page.setUserAgent(mUserAgent)
+        // }
 
         page.on('dialog', async dialog => dialog.type() == "beforeunload" && dialog.accept())
 
@@ -241,11 +230,11 @@ async function createAccount() {
     map['create'] = parseInt(new Date().getTime()/1000)
 
     await page.goto('https://accounts.google.com/signup/v2/createaccount?continue=https%3A%2F%2Fmyaccount.google.com%2Fphone&theme=glif&flowName=GlifWebSignIn&flowEntry=SignUp&hl=en', { waitUntil: 'load', timeout: 0 })
-    await delay(500)
+    await delay(200)
     await page.type('#firstName', name[0])
-    await delay(500)
+    await delay(200)
     await page.type('#lastName', name[1])
-    await delay(500)
+    await delay(200)
     await page.click('#collectNameNext')
     let success = await waitForPage(1)
     if (success) {
@@ -254,15 +243,15 @@ async function createAccount() {
         let day = getRandomDay()
         let next = 'button[class="VfPpkd-LgbsSe VfPpkd-LgbsSe-OWXEXe-k8QpJ VfPpkd-LgbsSe-OWXEXe-dgl2Hf nCP5yc AjY5Oe DuMIQc LQeN7 qIypjc TrZEUc lw1w4b"]'
         let input = 'input[class="whsOnd zHQkBf"]'
-        await delay(1000)
+        await delay(200)
         await page.select('#month', month)
-        await delay(500)
+        await delay(100)
         await page.type('#day', day)
-        await delay(500)
+        await delay(100)
         await page.type('#year', year)
-        await delay(500)
+        await delay(100)
         await page.select('#gender', '1')
-        await delay(500)
+        await delay(200)
         await page.click(next)
         success = await waitForPage(2)
         if (success) {
@@ -272,14 +261,14 @@ async function createAccount() {
                 await delay(500)
             }
             await page.type(input, USER)
-            await delay(500)
+            await delay(200)
             await page.click(next)
             success = await waitForUser()
             if (success) {
                 await page.type('input[name="Passwd"]', map['password'])
-                await delay(500)
+                await delay(200)
                 await page.type('input[name="PasswdAgain"]', map['password'])
-                await delay(500)
+                await delay(200)
                 await page.click(next)
                 success = await waitForPage(3)
                 if (success) {
@@ -346,8 +335,13 @@ async function createAccount() {
                         await errorHandling()
                     }
                 } else {
-                    console.log('|*|-TIMEOUT:5-')
-                    await errorHandling()
+                    console.log('|*|-NOT-CREATE-')
+                    if (mSecontTry) {
+                        mSecontTry = false
+                        await errorHandling()
+                    } else {
+                        process.exit(0)
+                    }
                 }
             } else {
                 console.log('|*|-TIMEOUT:4-')
@@ -442,7 +436,10 @@ async function waitForPage(type) {
                         timeout = 0
                         break
                     }
-                } else if (type == 4 && url.startsWith('https://accounts.google.com/signup/v2/phonecollection')) {
+                } else if (type == 3 && url.startsWith('https://accounts.google.com/signup/v2/idvbyphone')) {
+                    timeout = 99
+                    break
+                }  else if (type == 4 && url.startsWith('https://accounts.google.com/signup/v2/phonecollection')) {
                     let data = await exists('#phoneNumberId')
                     if (data) {
                         timeout = 0
