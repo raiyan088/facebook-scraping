@@ -22,7 +22,6 @@ async function browserStart() {
         console.log('Start Browser')
 
         browser = await puppeteer.launch({
-            //executablePath: 'C:\\Users\\Hp 11 GENERATION\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe',
             executablePath: '/usr/bin/google-chrome-stable',
             headless: false,
             headless: 'new',
@@ -67,8 +66,19 @@ async function browserStart() {
 
         page.on('dialog', async dialog => dialog.type() == "beforeunload" && dialog.accept())
 
-        await getZagl('https://za.gl/ciVt')
-        
+        await getZagl('https://za.gl/V2PoW')
+
+        console.log('----COMPLETED----', 1)
+
+        await getFiveSecond('http://festyy.com/ehD5hw', 'span[class="skip-btn show"]', '#skip_button')
+
+        console.log('----COMPLETED----', 2)
+
+        await getFiveSecond('https://adfoc.us/84368198903866', '#showTimer[style="display: none;"]', '#showSkip > a')
+ 
+        console.log('----COMPLETED----', 3)
+
+        process.exit(0)
     } catch (error) {
         console.log(error)
     }
@@ -81,7 +91,11 @@ async function getZagl(url) {
 
     let mSuccess = false
 
+    let timeout = 0
+
     while (true) {
+        timeout++
+
         try {
             let base64 = await page.evaluate(() => {
                 let root = document.querySelector('#greendot > img')
@@ -157,13 +171,7 @@ async function getZagl(url) {
                 try {
                     await page.bringToFront()
 
-                    let error = await page.evaluate(() => {
-                        let root = document.querySelector('div[class="alert alert-danger"]')
-                        if (root) {
-                            return true
-                        }
-                        return false
-                    })
+                    let error = await exists('div[class="alert alert-danger"]')
 
                     if (error) {
                         break
@@ -191,11 +199,119 @@ async function getZagl(url) {
             break
         }
 
+        if(timeout > 4) {
+            break
+        }
+
         await delay(1000)
     }
-
     
+    await delay(1000)
+    await closeAllPage()
+
     console.log('Success')
+}
+
+async function getFiveSecond(url, first, second) {
+    await page.goto(url, { waitUntil: 'load', timeout: 0 })
+    console.log('Page Load Finish')
+
+    let _timeout = 0
+
+    while (true) {
+        await delay(1000)
+        let timeout = 0
+        _timeout++
+
+        while (true) {
+            timeout++
+            try {
+                let skip = await exists(first)
+    
+                if (skip) {
+                    timeout = 0
+                    break
+                }
+            } catch (error) {}
+    
+            if (timeout > 10) {
+                timeout = 99
+                break
+            }
+            await delay(1000)
+        }
+    
+        if (timeout == 99) {
+            await page.goto(url, { waitUntil: 'load', timeout: 0 })
+        } else {
+            timeout = 0
+            while (true) {
+                timeout++
+                try {
+                    let skip = await exists(second)
+        
+                    if (skip) {
+                        await page.bringToFront()
+                        await delay(250)
+                        await page.click(second)
+                    } else {
+                        timeout = 0
+                        break
+                    }
+                } catch (error) {
+                    timeout = 0
+                    break
+                }
+
+                if (timeout > 10) {
+                    timeout = 99
+                    break
+                }
+        
+                await delay(500)
+            }
+
+            if (timeout == 99) {
+                await page.goto(url, { waitUntil: 'load', timeout: 0 })
+            } else {
+                break
+            }
+        }
+
+        if (_timeout > 3) {
+            break
+        }
+    }
+
+    await delay(1000)
+    await closeAllPage()
+    console.log('Load Success')
+}
+
+async function getOuo(url) {
+    await page.goto(url, { waitUntil: 'load', timeout: 0 })
+    console.log('Page Load Finish')
+
+    await delay(2000)
+
+
+    let frames = await page.frames()
+    let challenge = frames.find(frame => frame.url().includes('challenges.cloudflare.com'))
+    
+    if (challenge) {
+        await delay(2000)
+        let vetify = await challenge.$('input[type="checkbox"]')
+        await vetify.click()
+        console.log('Click')           
+    } else {
+        console.log('Frame Null')
+    }
+
+    let _timeout = 0
+
+    // await delay(1000)
+    // await closeAllPage()
+    console.log('Load Success')
 }
 
 async function getAsiified(path, data) {
@@ -216,25 +332,42 @@ async function getAsiified(path, data) {
     })
 }
 
+async function closeAllPage() {
+    let pages =  await browser.pages()
+
+    await pages[0].goto('about:blank')
+
+    for (let i = 1; i < pages.length; i++) {
+        try {
+            await pages[i].goto('about:blank')
+            await delay(500)
+            await pages[i].close()
+        } catch (error) {}
+    }
+}
 
 async function waitFor(element) {
     while (true) {
         await delay(1000)
 
         try {
-            let exists = await page.evaluate((element) => {
-                let root = document.querySelector(element)
-                if (root) {
-                    return true
-                }
-                return false
-            }, element)
+            let has = await exists(element)
 
-            if (exists) {
+            if (has) {
                 break
             }
         } catch (error) {}
     }
+}
+
+async function exists(element) {
+    return await page.evaluate((element) => {
+        let root = document.querySelector(element)
+        if (root) {
+            return true
+        }
+        return false
+    }, element)
 }
 
 
