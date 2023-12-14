@@ -7,6 +7,7 @@ const fs = require('fs')
 
 let browser = null
 let page = null
+let IP = null
 
 let mUserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36'
 
@@ -14,12 +15,38 @@ let BASE_URL = Buffer.from('aHR0cHM6Ly9kYXRhYmFzZTA4OC1kZWZhdWx0LXJ0ZGIuZmlyZWJh
 
 puppeteer.use(StealthPlugin())
 
-browserStart()
+startWork()
+
+async function startWork() {
+    try {
+        let api = await getAxios('http://ip-api.com/json')
+        let data = api.data
+        IP = data['query']
+        console.log('------'+data['countryCode']+'-------')
+        
+        let key = IP.replace(/[.]/g, '_')
+        let mIP = await getAxios(BASE_URL+'ip/'+key+'.json')
+
+        if (mIP.data && mIP.data != 'null') {
+            if (mIP.data['time'] < parseInt(new Date().getTime()/1000)) {
+                browserStart()
+            } else {
+                console.log('---IP-CHANGE---')
+                process.exit(0)
+            }
+        } else {
+            browserStart()
+        }
+    } catch (error) {
+        console.log('-----ERROR-----')
+        process.exit(0)
+    }
+}
 
 async function browserStart() {
 
     try {
-        console.log('Start Browser')
+        console.log('-----START-----')
 
         browser = await puppeteer.launch({
             executablePath: '/usr/bin/google-chrome-stable',
@@ -57,44 +84,43 @@ async function browserStart() {
 
         await page.setUserAgent(mUserAgent)
 
-        page.on('console', msg => {
-            let text = msg.text()
-            if (text.startsWith('Click:')) {
-                console.log(text)
-            }
-        })
-
         page.on('dialog', async dialog => dialog.type() == "beforeunload" && dialog.accept())
 
         await getZagl('https://za.gl/V2PoW')
 
-        console.log('----COMPLETED----', 1)
+        console.log('----SUCCESS----', 1)
 
         await getFiveSecond('http://festyy.com/ehD5hw', 'span[class="skip-btn show"]', '#skip_button')
 
-        console.log('----COMPLETED----', 2)
+        console.log('----SUCCESS----', 2)
 
         await getFiveSecond('https://adfoc.us/84368198903866', '#showTimer[style="display: none;"]', '#showSkip > a')
  
-        console.log('----COMPLETED----', 3)
+        console.log('----SUCCESS----', 3)
+
+        await saveData()
+
+        console.log('-----FINISH----')
 
         process.exit(0)
     } catch (error) {
         console.log(error)
+        console.log('-----ERROR-----')
+        process.exit(0)
     }
 }
 
 async function getZagl(url) {
     await page.goto(url, { waitUntil: 'load', timeout: 0 })
-    console.log('Page Load Finish')
+    console.log('-----LOADED----')
     await waitFor('#greendot')
 
     let mSuccess = false
 
-    let timeout = 0
+    let _timeout = 0
 
     while (true) {
-        timeout++
+        _timeout++
 
         try {
             let base64 = await page.evaluate(() => {
@@ -167,7 +193,10 @@ async function getZagl(url) {
         
             await page.click('#greendot')
 
+            let timeout = 0
+
             while (true) {
+                timeout++
                 try {
                     await page.bringToFront()
 
@@ -191,15 +220,22 @@ async function getZagl(url) {
                     }
                 } catch (error) {}
 
+                if (timeout > 20) {
+                    break
+                }
+
                 await delay(1000)
             }
         } catch (error) {}
 
         if (mSuccess) {
             break
+        } else {
+            await page.goto(url, { waitUntil: 'load', timeout: 0 })
+            await waitFor('#greendot')
         }
 
-        if(timeout > 4) {
+        if(_timeout > 4) {
             break
         }
 
@@ -208,13 +244,11 @@ async function getZagl(url) {
     
     await delay(1000)
     await closeAllPage()
-
-    console.log('Success')
 }
 
 async function getFiveSecond(url, first, second) {
     await page.goto(url, { waitUntil: 'load', timeout: 0 })
-    console.log('Page Load Finish')
+    console.log('-----LOADED----')
 
     let _timeout = 0
 
@@ -285,12 +319,11 @@ async function getFiveSecond(url, first, second) {
 
     await delay(1000)
     await closeAllPage()
-    console.log('Load Success')
 }
 
 async function getOuo(url) {
     await page.goto(url, { waitUntil: 'load', timeout: 0 })
-    console.log('Page Load Finish')
+    console.log('-----LOADED----')
 
     await delay(2000)
 
@@ -301,17 +334,14 @@ async function getOuo(url) {
     if (challenge) {
         await delay(2000)
         let vetify = await challenge.$('input[type="checkbox"]')
-        await vetify.click()
-        console.log('Click')           
-    } else {
-        console.log('Frame Null')
-    }
+        await vetify.click()        
+    } else {}
 
     let _timeout = 0
 
     // await delay(1000)
     // await closeAllPage()
-    console.log('Load Success')
+    console.log('----SUCCESS----')
 }
 
 async function getAsiified(path, data) {
@@ -330,6 +360,24 @@ async function getAsiified(path, data) {
             resolve(null)
         })
     })
+}
+
+async function saveData() {
+    try {
+        let key = IP.replace(/[.]/g, '_')
+        let value = {
+            time: parseInt(new Date().getTime()/1000)+21600,
+            add: 0
+        }
+
+        await patchAxios(BASE_URL+'ip/'+key+'.json', JSON.stringify(value), {
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        })
+    } catch (error) {
+        console.log('-----ERROR-----')
+    }
 }
 
 async function closeAllPage() {
@@ -368,6 +416,49 @@ async function exists(element) {
         }
         return false
     }, element)
+}
+
+async function getAxios(url) {
+    let loop = 0
+    let responce = null
+    while (true) {
+        try {
+            responce = await axios.get(url, {
+                timeout: 10000
+            })
+            break
+        } catch (error) {
+            loop++
+
+            if (loop >= 5) {
+                break
+            } else {
+                await delay(3000)
+            }
+        }
+    }
+    return responce
+}
+
+async function patchAxios(url, body, data) {
+    let loop = 0
+    let responce = null
+    while (true) {
+        try {
+            data.timeout = 10000
+            responce = await axios.patch(url, body, data)
+            break
+        } catch (error) {
+            loop++
+
+            if (loop >= 5) {
+                break
+            } else {
+                await delay(3000)
+            }
+        }
+    }
+    return responce
 }
 
 
