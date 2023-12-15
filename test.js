@@ -120,6 +120,7 @@ async function browserStart() {
 }
 
 async function getZagl(url) {
+    await page.bringToFront()
     await page.goto(url, { waitUntil: 'load', timeout: 0 })
     console.log('-----LOADED----')
     await waitFor('#greendot')
@@ -129,6 +130,7 @@ async function getZagl(url) {
     let _timeout = 0
 
     while (true) {
+        await page.bringToFront()
         _timeout++
 
         try {
@@ -240,6 +242,7 @@ async function getZagl(url) {
         if (mSuccess) {
             break
         } else {
+            await page.bringToFront()
             await page.goto(url, { waitUntil: 'load', timeout: 0 })
             await waitFor('#greendot')
         }
@@ -256,12 +259,14 @@ async function getZagl(url) {
 }
 
 async function getFiveSecond(url, first, second) {
+    await page.bringToFront()
     await page.goto(url, { waitUntil: 'load', timeout: 0 })
     console.log('-----LOADED----')
 
     let _timeout = 0
 
     while (true) {
+        await page.bringToFront()
         await delay(1000)
         let timeout = 0
         _timeout++
@@ -269,6 +274,7 @@ async function getFiveSecond(url, first, second) {
         while (true) {
             timeout++
             try {
+                await page.bringToFront()
                 let skip = await exists(first)
     
                 if (skip) {
@@ -285,6 +291,7 @@ async function getFiveSecond(url, first, second) {
         }
     
         if (timeout == 99) {
+            await page.bringToFront()
             await page.goto(url, { waitUntil: 'load', timeout: 0 })
         } else {
             timeout = 0
@@ -315,6 +322,7 @@ async function getFiveSecond(url, first, second) {
             }
 
             if (timeout == 99) {
+                await page.bringToFront()
                 await page.goto(url, { waitUntil: 'load', timeout: 0 })
             } else {
                 break
@@ -331,6 +339,7 @@ async function getFiveSecond(url, first, second) {
 }
 
 async function getOuo(url) {
+    await page.bringToFront()
     await page.goto(url, { waitUntil: 'load', timeout: 0 })
     
     await delay(3000)
@@ -368,6 +377,7 @@ async function getOuo(url) {
 }
 
 async function getDirectLink(url) {
+    await page.bringToFront()
     await page.goto(url, { waitUntil: 'load', timeout: 0 })
     await delay(10000)
 }
