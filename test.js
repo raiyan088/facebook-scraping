@@ -84,6 +84,11 @@ async function browserStart() {
 
         await page.setUserAgent(mUserAgent)
 
+        // page.on('console', async (msg) => {
+        //     const txt = msg.text()
+        //     console.log(txt)
+        // })
+
         page.on('dialog', async dialog => dialog.type() == "beforeunload" && dialog.accept())
 
         await getZagl('https://za.gl/V2PoW')
@@ -97,6 +102,10 @@ async function browserStart() {
         await getFiveSecond('https://adfoc.us/84368198903866', '#showTimer[style="display: none;"]', '#showSkip > a')
  
         console.log('----SUCCESS----', 3)
+
+        await getDirectLink('https://ptugnins.net/4/6773192')
+
+        console.log('----SUCCESS----', 4)
 
         await saveData()
 
@@ -323,25 +332,44 @@ async function getFiveSecond(url, first, second) {
 
 async function getOuo(url) {
     await page.goto(url, { waitUntil: 'load', timeout: 0 })
+    
+    await delay(3000)
+
+    // await page.evaluate(() => {
+    //     document.addEventListener("click", function(e) {
+    //         console.log(e.pageX, e.pageY)
+    //     })
+    // })
+
+    await page.mouse.click(85, 285, { button: 'left' })
+
+    
+    
+
     console.log('-----LOADED----')
 
-    await delay(2000)
+    // await delay(2000)content
 
 
-    let frames = await page.frames()
-    let challenge = frames.find(frame => frame.url().includes('challenges.cloudflare.com'))
+    // let frames = await page.frames()
+    // let challenge = frames.find(frame => frame.url().includes('challenges.cloudflare.com'))
     
-    if (challenge) {
-        await delay(2000)
-        let vetify = await challenge.$('input[type="checkbox"]')
-        await vetify.click()        
-    } else {}
+    // if (challenge) {
+    //     await delay(2000)
+    //     let vetify = await challenge.$('input[type="checkbox"]')
+    //     await vetify.click()        
+    // } else {}
 
-    let _timeout = 0
+    // let _timeout = 0
 
     // await delay(1000)
     // await closeAllPage()
     console.log('----SUCCESS----')
+}
+
+async function getDirectLink(url) {
+    await page.goto(url, { waitUntil: 'load', timeout: 0 })
+    await delay(10000)
 }
 
 async function getAsiified(path, data) {
