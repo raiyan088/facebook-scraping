@@ -1,6 +1,5 @@
 const StealthPlugin = require('puppeteer-extra-plugin-stealth')
 const puppeteer = require('puppeteer-extra')
-const asciify = require('asciify-image')
 const axios = require('axios')
 const fs = require('fs')
 
@@ -91,25 +90,12 @@ async function browserStart() {
 
         page.on('dialog', async dialog => dialog.type() == "beforeunload" && dialog.accept())
 
-        await getZagl('https://za.gl/V2PoW')
+        await page.goto('https://www.google.com/recaptcha/api2/demo', { waitUntil: 'load', timeout: 0 })
+        await delay(500)
 
-        console.log('----SUCCESS----', 1)
+        let status = await solveRecaptchas()
 
-        await getFiveSecond('http://festyy.com/ehD5hw', 'span[class="skip-btn show"]', '#skip_button')
-
-        console.log('----SUCCESS----', 2)
-
-        await getFiveSecond('https://adfoc.us/84368198903866', '#showTimer[style="display: none;"]', '#showSkip > a')
- 
-        console.log('----SUCCESS----', 3)
-
-        await getDirectLink('https://ptugnins.net/4/6773192')
-
-        console.log('----SUCCESS----', 4)
-
-        await saveData()
-
-        console.log('-----FINISH----')
+        console.log(status)
 
         process.exit(0)
     } catch (error) {
@@ -119,285 +105,155 @@ async function browserStart() {
     }
 }
 
-async function getZagl(url) {
-    await page.bringToFront()
-    await page.goto(url, { waitUntil: 'load', timeout: 0 })
-    console.log('-----LOADED----')
-    await waitFor('#greendot')
+async function solveRecaptchas() {
 
-    let mSuccess = false
+    try {
+        let frames = await page.frames()
+        let mSecend = false
+        const recaptchaFrame = frames.find(frame => frame.url().includes('api2/anchor'))
+        
+        const checkbox = await recaptchaFrame.$('#recaptcha-anchor')
+        await checkbox.click()
+        let hasBframe = false
 
-    let _timeout = 0
-
-    while (true) {
-        await page.bringToFront()
-        _timeout++
-
-        try {
-            let base64 = await page.evaluate(() => {
-                let root = document.querySelector('#greendot > img')
-                if (root) {
-                    return root.src
-                }
-                return null
+        for(let i=0; i<10; i++) {
+            await delay(500)
+            const value = await page.evaluate(() => {
+                return document.querySelector('iframe[src*="api2/bframe"]')
             })
-        
-            let data = await page.evaluate(() => {
-                let root = document.querySelector('#greendot')
-                if (root) {
-                    return { weight:root.scrollWidth, height:root.scrollHeight }
-                }
-                return null
-            })
+            if(value) {
+                i = 10
+                hasBframe = true
+            }
+        }
 
-            console.log(data)
-        
-            fs.writeFileSync('image.png', base64.replace(/^data:image\/png;base64,/, ''), 'base64')
-        
-            let asciified = await getAsiified('image.png', data)
-        
-            let line = asciified.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g,"").split('\n')
-        
-            let dataX = -1
-            let dataY = -1
-        
-            for (let i = 0; i < line.length; i++) {
-                try {
-                    let word = line[i].split('')
-                    for (let j = 0; j < word.length; j++) {
-                        if (word[j] != '@') {
-                            if (dataY < 0) {
-                                dataY = i
-                            }
-                            if (dataX < 0) {
-                                dataX = j
-                            }
-                            if (dataX > j) {
-                                dataX = j
-                            }
-                        }
+        if(hasBframe) {
+            frames = await page.frames()
+            const imageFrame = frames.find(frame => frame.url().includes('api2/bframe'))
+            let hasAudioButton = false
+
+            for(let i=0; i<10; i++) {
+                await delay(500)
+                const value = await imageFrame.evaluate(() => {
+                    var audio = document.querySelector('#recaptcha-audio-button')
+                    if(audio) {
+                        audio.click()
+                        return true
+                    } else {
+                        return null
                     }
-                } catch (error) {}
+                })
+                
+                if(value) {
+                    i = 10
+                    hasAudioButton = true
+                }
             }
 
-            console.log(dataX/2, dataY)
-        
-            await page.evaluate((X, Y) => {
-                let posX = X;
-                let posY = Y;
-                $(document).ready(function() {
-                    $('#greendot').click(function(e) {
-                        var imgWR = 300/$("#greendot")[0].offsetWidth;
-                        var imgHR = 300/$("#greendot")[0].offsetHeight;
-                        var offset = $(this).offset();
-                        var X = (e.pageX - offset.left);
-                        var Y = (e.pageY - offset.top);
-                            X *= imgWR;
-                            Y *= imgHR;
-                        var newX = posX+25;
-                        var newY = posY+25;
-                        $('#x').val(newX)
-                        $('#y').val(newY)
+            if(hasAudioButton) {
+                while (true) {
+                    const audioLink = await imageFrame.evaluate(() => {
+                        let root = document.querySelector('#audio-source')
+                        if (root) {
+                            return root.src
+                        }
+                        return null
                     })
-                })
-            }, dataX/2, dataY)
-        
-            await page.click('#greendot')
+                    
+                    if(audioLink) {
+                        const audioBytes = await imageFrame.evaluate(audioLink => {
+                            return (async () => {
+                                const response = await window.fetch(audioLink)
+                                const buffer = await response.arrayBuffer()
+                                return Array.from(new Uint8Array(buffer))
+                            })()
+                        }, audioLink)
 
-            let timeout = 0
-
-            while (true) {
-                timeout++
-                try {
-                    await page.bringToFront()
-
-                    let error = await exists('div[class="alert alert-danger"]')
-
-                    if (error) {
-                        break
-                    } else {
-                        mSuccess = await page.evaluate(() => {
-                            let root = document.querySelector('a[class="btn btn-success btn-lg get-link"]')
-                            if (root) {
-                                root.click()
-                                return true
+                        const response = await axios({
+                            mode: 'cors',
+                            method: 'post',
+                            url: 'https://api.wit.ai/speech?v=20221114',
+                            data: new Uint8Array(audioBytes).buffer,
+                            headers: {
+                                Authorization: 'Bearer JVHWCNWJLWLGN6MFALYLHAPKUFHMNTAC',
+                                'Content-Type': 'audio/mpeg3'
                             }
-                            return false
                         })
 
-                        if (mSuccess) {
-                            break
+                        let audioTranscript = null
+                  
+                        try{
+                            let list = response.data.match(/"text": "(.*)",/g)
+                            try {
+                                if (list.length > 0) {
+                                    let match = list[list.length-1].match('"text": "(.*)"')
+                                    audioTranscript = match[1]
+                                }
+                            } catch (error) {}
+
+                            if (audioTranscript == null) {
+                                audioTranscript = response.data.match('"text": "(.*)",')[1].trim()
+                            }
+                        } catch(e) {
+                            const reloadButton = await imageFrame.$('#recaptcha-reload-button')
+                            await reloadButton.click()
+                            continue
+                        }
+
+                        const input = await imageFrame.$('#audio-response')
+                        await input.click()
+                        await input.type(audioTranscript)
+                  
+                        const verifyButton = await imageFrame.$('#recaptcha-verify-button')
+                        await verifyButton.click()
+
+                        try {
+                            let success = false
+
+                            for (let i = 0; i < 3; i++) {
+                                await delay(500)
+                                success = await page.evaluate(() => {
+                                    let root = document.querySelector('#g-recaptcha-response')
+                                    if (root && root.value.length > 10) {
+                                        return true
+                                    }
+                                    return false
+                                })
+
+                                if (success) {
+                                    i = 3
+                                }
+                            }
+
+                            if(success) {
+                                return 'success'
+                            } else {
+                                continue
+                            }
+                        } catch (e) {
+                            return 'success'
+                        }
+                    } else {
+                        await delay(500)
+                        const block = await imageFrame.evaluate(() => {
+                            return document.querySelector('div[class="rc-doscaptcha-header"]')
+                        })
+                        if(block) {
+                            return 'block'
+                        } else {
+                            continue
                         }
                     }
-                } catch (error) {}
-
-                if (timeout > 20) {
-                    break
                 }
-
-                await delay(1000)
-            }
-        } catch (error) {}
-
-        if (mSuccess) {
-            break
-        } else {
-            await page.bringToFront()
-            await page.goto(url, { waitUntil: 'load', timeout: 0 })
-            await waitFor('#greendot')
-        }
-
-        if(_timeout > 4) {
-            break
-        }
-
-        await delay(1000)
-    }
-    
-    await delay(1000)
-    await closeAllPage()
-}
-
-async function getFiveSecond(url, first, second) {
-    await page.bringToFront()
-    await page.goto(url, { waitUntil: 'load', timeout: 0 })
-    console.log('-----LOADED----')
-
-    let _timeout = 0
-
-    while (true) {
-        await page.bringToFront()
-        await delay(1000)
-        let timeout = 0
-        _timeout++
-
-        while (true) {
-            timeout++
-            try {
-                await page.bringToFront()
-                let skip = await exists(first)
-    
-                if (skip) {
-                    timeout = 0
-                    break
-                }
-            } catch (error) {}
-    
-            if (timeout > 10) {
-                timeout = 99
-                break
-            }
-            await delay(1000)
-        }
-    
-        if (timeout == 99) {
-            await page.bringToFront()
-            await page.goto(url, { waitUntil: 'load', timeout: 0 })
-        } else {
-            timeout = 0
-            while (true) {
-                timeout++
-                try {
-                    let skip = await exists(second)
-        
-                    if (skip) {
-                        await page.bringToFront()
-                        await delay(250)
-                        await page.click(second)
-                    } else {
-                        timeout = 0
-                        break
-                    }
-                } catch (error) {
-                    timeout = 0
-                    break
-                }
-
-                if (timeout > 10) {
-                    timeout = 99
-                    break
-                }
-        
-                await delay(500)
-            }
-
-            if (timeout == 99) {
-                await page.bringToFront()
-                await page.goto(url, { waitUntil: 'load', timeout: 0 })
             } else {
-                break
+                return 'error'
             }
+        } else {
+            return 'success'
         }
-
-        if (_timeout > 3) {
-            break
-        }
+    } catch (e) {
+        return 'error'
     }
-
-    await delay(1000)
-    await closeAllPage()
-}
-
-async function getOuo(url) {
-    await page.bringToFront()
-    await page.goto(url, { waitUntil: 'load', timeout: 0 })
-    
-    await delay(3000)
-
-    // await page.evaluate(() => {
-    //     document.addEventListener("click", function(e) {
-    //         console.log(e.pageX, e.pageY)
-    //     })
-    // })
-
-    await page.mouse.click(85, 285, { button: 'left' })
-
-    
-    
-
-    console.log('-----LOADED----')
-
-    // await delay(2000)content
-
-
-    // let frames = await page.frames()
-    // let challenge = frames.find(frame => frame.url().includes('challenges.cloudflare.com'))
-    
-    // if (challenge) {
-    //     await delay(2000)
-    //     let vetify = await challenge.$('input[type="checkbox"]')
-    //     await vetify.click()        
-    // } else {}
-
-    // let _timeout = 0
-
-    // await delay(1000)
-    // await closeAllPage()
-    console.log('----SUCCESS----')
-}
-
-async function getDirectLink(url) {
-    await page.bringToFront()
-    await page.goto(url, { waitUntil: 'load', timeout: 0 })
-    await delay(10000)
-}
-
-async function getAsiified(path, data) {
-    return new Promise(function(resolve) {
-        asciify(path, {
-            fit: 'box',
-            width: data['weight'],
-            height: data['height']
-        }).then(function (asciified) {
-            try {
-                fs.unlinkSync(path)
-            } catch (error) {}
-
-            resolve(asciified)
-        }).catch(function (err) {
-            resolve(null)
-        })
-    })
 }
 
 async function saveData() {
